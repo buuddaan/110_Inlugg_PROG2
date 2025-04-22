@@ -8,7 +8,7 @@ public class NodeEdge<T> implements Edge<T> {
     public NodeEdge(T destination, String name, int weight) {
         this.destination = destination;
         this.name = name;
-        this.weight = weight;
+        setWeight(weight);
     }
     @Override
     public T getDestination() {
@@ -27,6 +27,15 @@ public class NodeEdge<T> implements Edge<T> {
 
     @Override
     public void setWeight(int weight) {
+        if (weight < 0) {
+            throw new IllegalArgumentException("Weight can not be negative");
+        }
         this.weight = weight;
     }
+
+    @Override
+    public String toString(){
+        return "till " + destination + " med " + name + " tar " + weight;
+        }
+
 }
