@@ -3,6 +3,168 @@ package se.su.inlupp;
 import java.util.*;
 
 public class ListGraph<T> implements Graph<T> {
+
+    private Map<T, Set<Edge<T>>> nodes = new HashMap<>();
+
+
+    @Override
+    public void add(T node) {
+        nodes.putIfAbsent(node, new HashSet<>());
+    }
+
+    @Override
+    public void connect(T node1, T node2, String name, int weight) {
+        checkIfNodesExists(node1, node2);
+        checkIfWeightIsValid(weight);
+        checkIfNoExistingEdge(node1, node2);
+
+        nodes.get(node1).add(new NodeEdge<>(node2, name, weight));
+        nodes.get(node2).add(new NodeEdge<>(node1, name, weight));
+        //Lägger till noder i båda riktningar med samma namn och vikt :D
+    }
+
+    @Override
+    public void setConnectionWeight(T node1, T node2, int weight) {
+        checkIfWeightIsValid(weight);
+        checkIfNodesExists(node1, node2);
+
+       if (getEdgeBetween(node1, node2) == null) {
+           throw new NoSuchElementException();
+        }
+       for (Edge<T> edge : nodes.get(node1)) {
+           if (edge.getDestination().equals(node2)) {
+               edge.setWeight(weight);
+               break; //Hindrar onödiga iterationer om vi redan hittar rätt direkt
+           }
+       }
+        for (Edge<T> edge : nodes.get(node2)) {
+            if (edge.getDestination().equals(node1)) {
+                edge.setWeight(weight);
+                break;
+            }
+        }
+    }
+
+    @Override
+    public Set<T> getNodes() {
+        throw new UnsupportedOperationException("Unimplemented method 'getNodes'");
+    }
+
+    @Override
+    public Collection<Edge<T>> getEdgesFrom(T node) {
+        throw new UnsupportedOperationException("Unimplemented method 'getEdgesFrom'");
+    }
+
+    @Override
+    public Edge<T> getEdgeBetween(T node1, T node2) {
+        checkIfNodesExists(node1, node2);
+
+        for (Edge<T> edge : nodes.get(node1)) {
+            if (edge.getDestination().equals(node2)) {
+                return edge;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public void disconnect(T node1, T node2) {
+        checkIfNodesExists(node1, node2);
+
+        if (getEdgeBetween(node1, node2) == null) {
+            throw new IllegalStateException("There is no connection between the nodes");
+            // Vi valde att inte skapa en ny metod för detta undantag då argumenten är annorlunda i disconnect metoden. :)
+         }
+
+        // Ta bort kant från node1 till node2
+        nodes.get(node1).removeIf(edgeInCollection -> edgeInCollection.getDestination().equals(node2));
+        // Ta bort kant från node2 till node1
+        nodes.get(node2).removeIf(edgeInCollection -> edgeInCollection.getDestination().equals(node1));
+
+    }
+
+    @Override
+    public void remove(T node) {
+        checkIfNodesExists(node);
+
+        Iterator<Map.Entry<T, Set<Edge<T>>>> nodeIterator = nodes.entrySet().iterator(); //Valde Map.Entry för att kunna iterera över både värden + nycklar samtidigt
+        while (nodeIterator.hasNext()) {
+            Map.Entry<T, Set<Edge<T>>> entry = nodeIterator.next();
+            T currentNode = entry.getKey(); //Hämtar ut nyckeln från nästa nod?
+
+            if (!currentNode.equals(node)) { //Hoppar över noden som vi fått in i vår metod, ska inte tas bort än!
+                Set<Edge<T>> edges = entry.getValue(); //hämtar alla kanter från aktuell nod
+                Iterator<Edge<T>> edgeIterator = edges.iterator(); //skapar iterator för att säkert kunna ta bort nod under iteration
+
+                while (edgeIterator.hasNext()) {
+                    Edge<T> edge = edgeIterator.next();
+                    if (edge.getDestination().equals(node)) {
+                        edgeIterator.remove(); //ta bort kanten
+                    }
+                }
+            }
+        }
+        nodes.remove(node);
+    }
+
+    @Override
+    public boolean pathExists(T from, T to) {
+        throw new UnsupportedOperationException("Unimplemented method 'pathExists'");
+    }
+
+    @Override
+    public List<Edge<T>> getPath(T from, T to) {
+        throw new UnsupportedOperationException("Unimplemented method 'getPath'");
+    }
+
+    // Private helper methods for exception handling
+
+    private void checkIfNodesExists(T node1, T node2) {
+        if (!nodes.containsKey(node1) || !nodes.containsKey(node2)) {
+            throw new NoSuchElementException("One or both of the nodes does not exist");
+        }
+    }
+
+    private void checkIfNodesExists(T node) {
+        if (!nodes.containsKey(node)) {
+            throw new NoSuchElementException("The node does not exist");
+        }
+    }
+
+    private void checkIfWeightIsValid(int weight) {
+        if (weight < 0) {
+            throw new IllegalArgumentException("Weight cannot be negative!");
+        }
+    }
+
+    private void checkIfNoExistingEdge(T node1, T node2) {
+        if (getEdgeBetween(node1, node2) != null) {
+            throw new IllegalStateException("There already is a connection between the nodes");
+        }
+    }
+    //detta är Beatrice toString i "City"
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Nodes");
+        sb.append("\n");
+        for (Map.Entry<T, Set<Edge<T>>> kv : nodes.entrySet()) {
+            sb.append(kv.getKey()).append(": ").append(kv.getValue()).append("\n");
+        }
+        return sb.toString();
+    }
+}
+
+
+
+
+
+
+/* package se.su.inlupp;
+
+
+import java.util.*;
+
+public class ListGraph<T> implements Graph<T> {
   // T en typparameter, ex Int, String. Nyckel
 
   private Map<T, Set<Edge>> nodes = new HashMap<>();
@@ -11,7 +173,6 @@ public class ListGraph<T> implements Graph<T> {
   @Override
   public void add(T node) {
       nodes.putIfAbsent(node, new HashSet<>());
-      //throw new UnsupportedOperationException("Unimplemented method 'add'");
   }
 
   @Override
@@ -20,18 +181,16 @@ public class ListGraph<T> implements Graph<T> {
     if (!nodes.containsKey(node1) || !nodes.containsKey(node2))  { //Kontrollerar så att båda noderna finns, annars kastas exception
       throw new NoSuchElementException("One or both of the nodes does not exist");
     }
-      add(node1);
-      add(node2);
-
-      Set<Edge> fromNodes = nodes.get(node1);
-      Set<Edge> toNodes = nodes.get(node2);
-
-      fromNodes.add(new NodeEdge(node1, name, weight));
-      toNodes.add(new NodeEdge(node2, name, weight));
-
-
-
-    throw new UnsupportedOperationException("Unimplemented method 'connect'");
+    if (weight < 0) { // Kontroll så om weight är mindre än 0
+        throw new IllegalArgumentException("Weight cannot be negative!");
+    }
+      if (getEdgeBetween(node1, node2) != null) {
+          throw new IllegalStateException("There already is a connection between the nodes");
+          //Kalla på metoden vi har för att kasta det aktuella felmeddelandet
+      }
+      nodes.get(node1).add(new NodeEdge<>(node2, name, weight));
+      nodes.get(node2).add(new NodeEdge<>(node1, name, weight));
+      //Lägger till noder i båda riktningar med samma namn och vikt :D
   }
 
   @Override
@@ -51,8 +210,21 @@ public class ListGraph<T> implements Graph<T> {
 
   @Override
   public Edge<T> getEdgeBetween(T node1, T node2) {
-    throw new UnsupportedOperationException("Unimplemented method 'getEdgeBetween'");
+      if (!nodes.containsKey(node1) || !nodes.containsKey(node2)) {
+          throw new NoSuchElementException("One or both of the nodes does not exist"); //Kan bli egen metod?
+      }
+      for (Edge<T> edge : nodes.get(node1)) {
+          if (edge.getDestination().equals(node2)) {
+              return edge;
+          }
+      }
+      //throw new UnsupportedOperationException("Unimplemented method 'getEdgeBetween'");
+      return null;
   }
+
+          //Borde returnera noden/noderna som finns mellan node1, node2
+
+
 
   @Override
   public void disconnect(T node1, T node2) {
@@ -85,7 +257,7 @@ public class ListGraph<T> implements Graph<T> {
         }
     }
     nodes.remove(node);
-    throw new UnsupportedOperationException("Unimplemented method 'remove'");
+    // throw new UnsupportedOperationException("Unimplemented method 'remove'");
   }
 
 
@@ -98,5 +270,9 @@ public class ListGraph<T> implements Graph<T> {
   public List<Edge<T>> getPath(T from, T to) {
     throw new UnsupportedOperationException("Unimplemented method 'getPath'");
   }
-}
 
+
+
+
+}
+*/
