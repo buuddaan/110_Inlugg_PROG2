@@ -139,15 +139,15 @@ public class ListGraph<T> implements Graph<T> {
     public List<Edge<T>> getPath(T from, T to) {
         checkIfNodesExists(from, to);
 
-        // om det inte fick en path, If no path exists, return null immediately
+        // om det inte fick en path, null
         if (!pathExists(from, to)) {
             return null;
         }
 
-        // Use a map to track how we reached each node
+        // Map för hur man hittar varje node
         Map<T, T> predecessor = new HashMap<>();
 
-        // Use BFS to find shortest path
+        // Använd BFS för den kortaste vägen fram
         Queue<T> queue = new LinkedList<>();
         Set<T> visited = new HashSet<>();
 
@@ -157,7 +157,7 @@ public class ListGraph<T> implements Graph<T> {
         while (!queue.isEmpty()) {
             T current = queue.poll();
 
-            // Check all neighbors
+            // hitta alla grannar
             for (Edge<T> edge : nodes.get(current)) {
                 T neighbor = edge.getDestination();
 
@@ -166,7 +166,7 @@ public class ListGraph<T> implements Graph<T> {
                     predecessor.put(neighbor, current);
                     queue.add(neighbor);
 
-                    // If we found the destination, we can stop
+                    // om vi hittat rätt väg, break.
                     if (neighbor.equals(to)) {
                         queue.clear();
                         break;
@@ -175,12 +175,12 @@ public class ListGraph<T> implements Graph<T> {
             }
         }
 
-        // If destination was not reached
+        // om vi inte hittat rätt
         if (!predecessor.containsKey(to)) {
             return null;
         }
 
-        // Reconstruct the path
+        // kopiera och skapa ny path
         List<Edge<T>> path = new ArrayList<>();
         T current = to;
 
