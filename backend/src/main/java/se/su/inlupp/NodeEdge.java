@@ -37,5 +37,4 @@ public class NodeEdge<T> implements Edge<T> {
     public String toString(){
         return "till " + destination + " med " + name + " tar " + weight;
         }
-
 }
