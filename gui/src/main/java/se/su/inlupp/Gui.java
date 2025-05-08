@@ -4,11 +4,9 @@ import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -26,8 +24,9 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.SnapshotParameters;
 import javax.imageio.ImageIO;
 
+import java.io.BufferedWriter;
 import java.io.File;
-import java.util.List;
+import java.io.FileWriter;
 import java.util.Scanner;
 
 public class Gui extends Application {
@@ -105,8 +104,7 @@ primaryStage.setOnCloseRequest(event -> {
     }
 });
 
-
-        //4.1.2 Open
+        //4.1.2 Open (a saved file from 4.1.3)
         openMap.setOnAction(event -> {
             if (!confirmDiscardChanges()) return;
 
@@ -121,7 +119,6 @@ primaryStage.setOnCloseRequest(event -> {
             }
         });
 
-
         // 4.1.3 Spara graf (början)
         saveMap.setOnAction(event -> {
             FileChooser fileChooser = new FileChooser();
@@ -129,20 +126,32 @@ primaryStage.setOnCloseRequest(event -> {
             fileChooser.getExtensionFilters().add(
                     new FileChooser.ExtensionFilter("Graph files", "*.graph")
             );
+//Spara raderna i en arraylist och sedan kunna hämta specifikt index som europe.gif
+            // SKapa en lista för att spara raderna
+            //Hämta index 0 och hämta filen europe.gif
+            // Spara en lista med resultatet som .split() metod (för att plocka ut enskilda ord) för att dela upp raden: stad, double x, double y
+            //Vi kommer då med .split få en lista av String sedan göra en for-loop och 0-2 Ligger info om stad1, sedan 3-5 ligger nästa info
+                //Casta om med double parse isch, för att casta om till double från String
+            // .split vid ; i .gift filen från index 2 -> slutet
+            // casta weight till double
 
             File selectedFile = fileChooser.showSaveDialog(primaryStage);
             if (selectedFile != null) {
-                try {
-                    StringBuilder builder = new StringBuilder();
-                    builder.append(imageFilePath).append("\n");
-                    //TODO: Lägg till kod för att spara noder och förbindelser
+                try (BufferedWriter bw = new BufferedWriter(new FileWriter(selectedFile))){
+                    bw.write(imageFilePath);
+                    bw.newLine();
+                    bw.write("Vad du vill!");
+                    System.out.println("Successfully wrote to: " + selectedFile.getAbsolutePath());
+
+                    //Spara instanserna i en lista
+
+                    bw.close();
                     hasUnsavedChanges = false;
                 } catch (Exception e) {
                     showError("Failed to save graph: " + e.getMessage());
                 }
             }
         });
-
 
         saveImage.setOnAction(e -> {
             WritableImage image = pane.snapshot(new SnapshotParameters(), null);
@@ -153,7 +162,6 @@ primaryStage.setOnCloseRequest(event -> {
                 showError("Failed to save image: " + ex.getMessage());
             }
         });
-
 
         Scene scene = new Scene(root, 640, 480);
         primaryStage.setScene(scene);
@@ -191,7 +199,7 @@ primaryStage.setOnCloseRequest(event -> {
         return alert.showAndWait().orElse(cancelButton) == okButton;
     }
 
-    //Matilda- detta blir väll dubblet, ska vara enligt figur 6 på Open och Save
+    //Matilda- detta blir väll dubblet, ska vara enligt figur 6 på Open och Save. Används ej
     private boolean showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");
