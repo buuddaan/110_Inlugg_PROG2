@@ -16,10 +16,7 @@ import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
@@ -40,18 +37,26 @@ import java.util.Scanner;
 
 public class Gui extends Application {
 
-    // Datastruktur för att hantera grafen och kartvyn
+    //Datastruktur för att hantera grafen och kartvyn
     Graph<String> graph = new ListGraph<>();
-    Pane pane = new Pane();
+    Pane overlayPane = new Pane(); //transparant lager över bilden för koordinater
     ImageView imageView = new ImageView();
+    StackPane pane = new StackPane(imageView, overlayPane);
+
     private boolean hasUnsavedChanges = false;
     private String imageFilePath = "";
     private Map<String, Place> placeMap = new HashMap<>();
+    private double extraHeight;
 
     public void start(Stage primaryStage) {
         // Grundstruktur för fönstret
         BorderPane root = new BorderPane();
         pane.setStyle("-fx-background-color: lightgray;");
+        overlayPane.setStyle("-fx-background-color: rgba(255, 0, 0, 0.5);");
+        overlayPane.setPickOnBounds(false);
+        overlayPane.prefWidthProperty().bind(imageView.fitWidthProperty());
+        overlayPane.prefHeightProperty().bind(imageView.fitHeightProperty());
+
 
         // Meny för File
         MenuBar menuBar = new MenuBar();
@@ -76,7 +81,7 @@ public class Gui extends Application {
 
         //4.2.1 NewPlace knappens funktionalitet
         newPlace.setOnAction(event -> {
-            pane.setOnMouseClicked(e -> {
+            overlayPane.setOnMouseClicked(e -> {
                 javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog();
                 dialog.setTitle("New Place");
                 dialog.setHeaderText("Enter name for the new place");
@@ -97,8 +102,7 @@ public class Gui extends Application {
                     }
                 });
 
-                // Återställ muslyssnaren så att man inte råkar skapa flera
-                pane.setOnMouseClicked(null);
+                // Återställ muslyssnaren så att man inte råkar skapa flerapane.setOnMouseClicked(null);
             });
         });
 
@@ -116,6 +120,8 @@ public class Gui extends Application {
         primaryStage.setScene(scene);
         primaryStage.setTitle("PathFinder");
         primaryStage.show();
+        extraHeight =  (primaryStage.getHeight() - primaryStage.getScene().getHeight()) + holdTop.getHeight();
+
 
         //4.1.1 New Map
         newMap.setOnAction(event -> {
@@ -133,12 +139,11 @@ public class Gui extends Application {
                 imageView.setFitWidth(image.getWidth());
                 imageView.setFitHeight(image.getHeight());
 
-                pane.getChildren().clear();
-                pane.getChildren().add(0, imageView);
+                pane.getChildren().setAll(imageView, overlayPane);
                 pane.setPrefSize(image.getWidth(), image.getHeight());
-                double extraHeight= menuBar.getHeight() + hbox.getHeight();
                 primaryStage.setWidth(image.getWidth());
-                primaryStage.setHeight(image.getHeight() + extraHeight);
+                primaryStage.setHeight(image.getHeight() + extraHeight); //tillagt 20 här bara /EF tog bort den härifrån
+
                 hasUnsavedChanges = true;
             }
         });
@@ -201,8 +206,6 @@ public class Gui extends Application {
                 showError("Failed to save image: " + ex.getMessage());
             }
         });
-
-
     }
 
     private void loadGraphFromFile(File file) {
@@ -216,8 +219,8 @@ public class Gui extends Application {
             imageView.setFitWidth(0);
             imageView.setFitHeight(0);
 
-            pane.getChildren().clear();
-            pane.getChildren().add(imageView);
+            pane.getChildren().setAll(imageView, overlayPane);
+
 
             //och här
             hasUnsavedChanges = false;
@@ -266,7 +269,7 @@ public class Gui extends Application {
             }
         });
 
-        pane.getChildren().add(circle);
+        overlayPane.getChildren().add(circle);
     }
 
     // Ritar en förbindelse (linje) mellan två platser
