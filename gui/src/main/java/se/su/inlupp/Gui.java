@@ -18,7 +18,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -42,7 +42,7 @@ public class Gui extends Application {
 
     // Datastruktur för att hantera grafen och kartvyn
     Graph<String> graph = new ListGraph<>();
-    StackPane pane = new StackPane();
+    Pane pane = new Pane();
     ImageView imageView = new ImageView();
     private boolean hasUnsavedChanges = false;
     private String imageFilePath = "";
@@ -84,8 +84,9 @@ public class Gui extends Application {
 
                 dialog.showAndWait().ifPresent(name -> {
                     if (!name.trim().isEmpty() && !graph.getNodes().contains(name)) {
-                        double x = e.getX() - pane.getLayoutX(); //För att alignement ska stämma utifrån bakgrundsbilden
-                        double y = e.getY() - pane.getLayoutY(); //För att alignement ska stämma utifrån bakgrundsbilden
+                        double x = e.getX();
+                        double y = e.getY();
+
                         Place place = new Place(name, x, y);
                         graph.add(name);
                         placeMap.put(name, place);
@@ -110,6 +111,12 @@ public class Gui extends Application {
         root.setTop(holdTop);
         root.setCenter(pane);
 
+        // Skapa scen och visa fönstret
+        Scene scene = new Scene(root, 640, 480);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("PathFinder");
+        primaryStage.show();
+
         //4.1.1 New Map
         newMap.setOnAction(event -> {
             FileChooser fileChooser = new FileChooser();
@@ -127,10 +134,11 @@ public class Gui extends Application {
                 imageView.setFitHeight(image.getHeight());
 
                 pane.getChildren().clear();
-                pane.getChildren().add(imageView);
+                pane.getChildren().add(0, imageView);
                 pane.setPrefSize(image.getWidth(), image.getHeight());
+                double extraHeight= menuBar.getHeight() + hbox.getHeight();
                 primaryStage.setWidth(image.getWidth());
-                primaryStage.setHeight(image.getHeight());
+                primaryStage.setHeight(image.getHeight() + extraHeight);
                 hasUnsavedChanges = true;
             }
         });
@@ -194,11 +202,7 @@ public class Gui extends Application {
             }
         });
 
-        // Skapa scen och visa fönstret
-        Scene scene = new Scene(root, 640, 480);
-        primaryStage.setScene(scene);
-        primaryStage.setTitle("PathFinder");
-        primaryStage.show();
+
     }
 
     private void loadGraphFromFile(File file) {
@@ -207,8 +211,15 @@ public class Gui extends Application {
             Image image = new Image(new File(imagePath).toURI().toString());
             imageView.setImage(image);
             imageView.setPreserveRatio(true);
+            // Här 2 rader
+            // Don't resize the image, keep it at its original dimensions
+            imageView.setFitWidth(0);
+            imageView.setFitHeight(0);
+
             pane.getChildren().clear();
             pane.getChildren().add(imageView);
+
+            //och här
             hasUnsavedChanges = false;
         } catch (Exception e) {
             showError("Failed to load graph: " + e.getMessage());
