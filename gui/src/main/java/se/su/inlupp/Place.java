@@ -25,7 +25,7 @@ public class Place {
 
     @Override
     public String toString() {
-        return name;
+        return name+";"+x+";"+y;
     }
 
     @Override

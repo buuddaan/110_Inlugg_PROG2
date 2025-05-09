@@ -52,11 +52,15 @@ public class Gui extends Application {
         // Grundstruktur för fönstret
         BorderPane root = new BorderPane();
         pane.setStyle("-fx-background-color: lightgray;");
-        overlayPane.setStyle("-fx-background-color: rgba(255, 0, 0, 0.5);");
+        overlayPane.setStyle("-fx-background-color: transparent;"); //Tillbaka till transparent
         overlayPane.setPickOnBounds(false);
-        overlayPane.prefWidthProperty().bind(imageView.fitWidthProperty());
-        overlayPane.prefHeightProperty().bind(imageView.fitHeightProperty());
 
+        // En lyssnare som explicit ändrar positionen av
+        imageView.boundsInParentProperty().addListener((obs, oldBounds, newBounds) -> {
+            // Apply the exact bounds of the ImageView to the overlay
+            overlayPane.setMaxWidth(newBounds.getWidth());
+            overlayPane.setMaxHeight(newBounds.getHeight());
+        });
 
         // Meny för File
         MenuBar menuBar = new MenuBar();
@@ -81,7 +85,9 @@ public class Gui extends Application {
 
         //4.2.1 NewPlace knappens funktionalitet
         newPlace.setOnAction(event -> {
+            //Style grejer, kolla i uppgiftsbeskrivningen
             overlayPane.setOnMouseClicked(e -> {
+
                 javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog();
                 dialog.setTitle("New Place");
                 dialog.setHeaderText("Enter name for the new place");
@@ -91,7 +97,6 @@ public class Gui extends Application {
                     if (!name.trim().isEmpty() && !graph.getNodes().contains(name)) {
                         double x = e.getX();
                         double y = e.getY();
-
                         Place place = new Place(name, x, y);
                         graph.add(name);
                         placeMap.put(name, place);
@@ -103,6 +108,7 @@ public class Gui extends Application {
                 });
 
                 // Återställ muslyssnaren så att man inte råkar skapa flerapane.setOnMouseClicked(null);
+
             });
         });
 
@@ -185,9 +191,9 @@ public class Gui extends Application {
             File selectedFile = fileChooser.showSaveDialog(primaryStage);
             if (selectedFile != null) {
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(selectedFile))) {
-                    bw.write(imageFilePath);
+                    bw.write(imageFilePath); //Senare lägga till bw.write("file:"+imageFilePath); istället eftersom tidigare filer har det. Ingen funktionalitet för split än bara
                     bw.newLine();
-                    bw.write("Vad du vill!"); // Placeholder
+                    bw.write(createSaveStringOfGraphs()); // Placeholder
                     bw.newLine();
                     hasUnsavedChanges = false;
                 } catch (Exception e) {
@@ -214,16 +220,19 @@ public class Gui extends Application {
             Image image = new Image(new File(imagePath).toURI().toString());
             imageView.setImage(image);
             imageView.setPreserveRatio(true);
+            String graphString = scanner.nextLine();
+            addPlacesFromFile(graphString);
             // Här 2 rader
             // Don't resize the image, keep it at its original dimensions
             imageView.setFitWidth(0);
             imageView.setFitHeight(0);
 
             pane.getChildren().setAll(imageView, overlayPane);
-
+            pane.setPrefSize(image.getWidth(), image.getHeight()); //Tillagd för test 9/5 23:49
 
             //och här
             hasUnsavedChanges = false;
+
         } catch (Exception e) {
             showError("Failed to load graph: " + e.getMessage());
         }
@@ -278,6 +287,36 @@ public class Gui extends Application {
         line.setStroke(Color.BLACK);
         line.setStrokeWidth(2);
         pane.getChildren().add(line);
+    }
+
+    private void addPlacesFromFile(String stringOfPlaces){
+        List<Place> placesToAdd = new ArrayList<>();
+        String[] values = stringOfPlaces.split(";");
+        for (int i = 0; i < values.length; i+=3){
+            String city = values[i];
+            double x = Double.parseDouble(values[i+1]);
+            double y = Double.parseDouble(values[i+2]);
+            placesToAdd.add(new Place(city, x, y));
+        }
+        for (Place p : placesToAdd){
+            graph.add(p.getName());
+            placeMap.put(p.getName(), p);
+            drawPlace(p);
+        }
+    }
+
+    private String createSaveStringOfGraphs(){
+        StringBuilder sb = new StringBuilder();
+
+        for (Map.Entry<String, Place> entry : placeMap.entrySet()) {
+            sb.append(entry.getValue().toString());
+            sb.append(";"); // append semicolon after each place
+        }
+        // Remove the last extra semicolon
+        if (sb.length() > 0) {
+            sb.setLength(sb.length() - 1);
+        }
+        return sb.toString();
     }
 
     public static void main(String[] args) {
