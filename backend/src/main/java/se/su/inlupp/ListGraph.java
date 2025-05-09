@@ -19,6 +19,7 @@ public class ListGraph<T> implements Graph<T> {
         checkIfNodesExists(node1, node2);
         checkIfWeightIsValid(weight);
         checkIfNoExistingEdge(node1, node2);
+        //Använd denna för att skapa
 
         nodes.get(node1).add(new NodeEdge<>(node2, name, weight));
         nodes.get(node2).add(new NodeEdge<>(node1, name, weight));
@@ -231,3 +232,5 @@ public class ListGraph<T> implements Graph<T> {
         return sb.toString();
     }
 }
+
+
