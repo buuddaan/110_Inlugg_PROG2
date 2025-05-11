@@ -52,7 +52,8 @@ public class Gui extends Application {
         // Grundstruktur för fönstret
         BorderPane root = new BorderPane();
         pane.setStyle("-fx-background-color: lightgray;");
-        overlayPane.setStyle("-fx-background-color: transparent;"); //Tillbaka till transparent
+        //overlayPane.setStyle("-fx-background-color: transparent;"); //Tillbaka till transparent
+        overlayPane.setStyle("-fx-background-color: rgb(255,0,0,0.5);");
         overlayPane.setPickOnBounds(false);
 
         // En lyssnare som explicit ändrar positionen av
@@ -101,6 +102,7 @@ public class Gui extends Application {
                         graph.add(name);
                         placeMap.put(name, place);
                         drawPlace(place);
+
                         hasUnsavedChanges = true;
                     } else {
                         showError("Name is empty or already used.");
@@ -292,8 +294,9 @@ public class Gui extends Application {
     private void addPlacesFromFile(String stringOfPlaces){
         List<Place> placesToAdd = new ArrayList<>();
         String[] values = stringOfPlaces.split(";");
+        String city;
         for (int i = 0; i < values.length; i+=3){
-            String city = values[i];
+            city = values[i];
             double x = Double.parseDouble(values[i+1]);
             double y = Double.parseDouble(values[i+2]);
             placesToAdd.add(new Place(city, x, y));
@@ -303,6 +306,11 @@ public class Gui extends Application {
             placeMap.put(p.getName(), p);
             drawPlace(p);
         }
+
+//TODO implementera funktionalitet för connection
+        //koppla musklick 1, musklick 2 (MAX 2) och koppla de till plats
+        // graph.get .någonting .connect?
+
     }
 
     private String createSaveStringOfGraphs(){
