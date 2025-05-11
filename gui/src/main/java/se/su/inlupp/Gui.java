@@ -4,6 +4,7 @@ package se.su.inlupp;
 // Importer för JavaFX och IO
 import javafx.application.Application;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -42,6 +43,7 @@ public class Gui extends Application {
     Pane overlayPane = new Pane(); //transparant lager över bilden för koordinater
     ImageView imageView = new ImageView();
     StackPane pane = new StackPane(imageView, overlayPane);
+    private List<Circle> selectedCircles = new ArrayList<>(); // Denna rad ska läggas till
 
     private boolean hasUnsavedChanges = false;
     private String imageFilePath = "";
@@ -53,7 +55,7 @@ public class Gui extends Application {
         BorderPane root = new BorderPane();
         pane.setStyle("-fx-background-color: lightgray;");
         //overlayPane.setStyle("-fx-background-color: transparent;"); //Tillbaka till transparent
-        overlayPane.setStyle("-fx-background-color: rgb(255,0,0,0.5);");
+        overlayPane.setStyle("-fx-background-color: transparent;");
         overlayPane.setPickOnBounds(false);
 
         // En lyssnare som explicit ändrar positionen av
@@ -86,6 +88,12 @@ public class Gui extends Application {
 
         //4.2.1 NewPlace knappens funktionalitet
         newPlace.setOnAction(event -> {
+
+            //för rätt musval
+            overlayPane.setCursor(Cursor.CROSSHAIR);
+            //Inaktivera
+            newPlace.setDisable(true);
+
             //Style grejer, kolla i uppgiftsbeskrivningen
             overlayPane.setOnMouseClicked(e -> {
 
@@ -109,11 +117,11 @@ public class Gui extends Application {
                     }
                 });
 
-                // Återställ muslyssnaren så att man inte råkar skapa flerapane.setOnMouseClicked(null);
+                    // Återställer muslyssnaren så att man inte råkar skapa flerapane.setOnMouseClicked(null);
+                enableButton(newPlace);
 
             });
         });
-
 
         HBox hbox = new HBox(10);
         hbox.getChildren().addAll(findPath, showConnection, newPlace, newConnection, changeConnection);
@@ -216,6 +224,14 @@ public class Gui extends Application {
         });
     }
 
+    private void enableButton(Button buttonName) {
+        buttonName.setDisable(false);
+        overlayPane.setCursor(Cursor.DEFAULT);
+        overlayPane.setOnMouseClicked(null); // Rensa eventhandler
+    }
+
+
+
     private void loadGraphFromFile(File file) {
         try (Scanner scanner = new Scanner(file)) {
             String imagePath = scanner.nextLine();
@@ -274,13 +290,22 @@ public class Gui extends Application {
 
         circle.setOnMouseClicked(event -> {
             if (circle.getFill().equals(Color.BLUE)) {
-                circle.setFill(Color.RED);
+                // Om färgen är blå och max 2 ej redan valda
+                if (selectedCircles.size() < 2) {
+                    circle.setFill(Color.RED);
+                    selectedCircles.add(circle);
+                } else {
+                    // Visa felmeddelande eller ignorera klicket
+                    showError("Du kan inte markera mer än två ställen samtidigt!");
+                }
             } else {
+                // Avmarkera
                 circle.setFill(Color.BLUE);
+                selectedCircles.remove(circle);
             }
         });
 
-        overlayPane.getChildren().add(circle);
+        overlayPane.getChildren().add(circle); // Glöm inte lägga till cirkeln i vyn
     }
 
     // Ritar en förbindelse (linje) mellan två platser
@@ -309,7 +334,7 @@ public class Gui extends Application {
 
 //TODO implementera funktionalitet för connection
         //koppla musklick 1, musklick 2 (MAX 2) och koppla de till plats
-        // graph.get .någonting .connect?
+        // graph.net .någonting .connect?
 
     }
 
