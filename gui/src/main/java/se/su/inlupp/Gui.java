@@ -125,8 +125,7 @@ public class Gui extends Application {
             });
         });
 
-        //4.2.3 New Connection button functionality
-        //4.2.3 New Connection button functionality
+        //4.2.3 New Connection button function
         newConnection.setOnAction(event -> {
             if (selectedCircles.size() != 2) {
                 // Error when not exactly two places are selected
@@ -241,6 +240,179 @@ public class Gui extends Application {
                     }
                     selectedCircles.clear();
                 }
+            });
+        }); //slut på newConnction
+
+        //4.2.4 Show Connection button functionality
+        showConnection.setOnAction(event -> {
+            // Check if exactly two places are selected
+            if (selectedCircles.size() != 2) {
+                showError("Two places must be selected!");
+                return;
+            }
+
+            // Find the Place objects corresponding to the selected circles
+            Place place1 = null;
+            Place place2 = null;
+
+            for (Map.Entry<String, Place> entry : placeMap.entrySet()) {
+                Place place = entry.getValue();
+                if (Math.abs(place.getX() - selectedCircles.get(0).getCenterX()) < 0.1 &&
+                        Math.abs(place.getY() - selectedCircles.get(0).getCenterY()) < 0.1) {
+                    place1 = place;
+                }
+                if (Math.abs(place.getX() - selectedCircles.get(1).getCenterX()) < 0.1 &&
+                        Math.abs(place.getY() - selectedCircles.get(1).getCenterY()) < 0.1) {
+                    place2 = place;
+                }
+            }
+
+            if (place1 == null || place2 == null) {
+                showError("Could not identify the selected places.");
+                return;
+            }
+
+            String node1 = place1.getName();
+            String node2 = place2.getName();
+
+            // Check if a connection exists between the selected places
+            Edge<String> edge = graph.getEdgeBetween(node1, node2);
+            if (edge == null) {
+                showError("There is no connection between the selected places.");
+                return;
+            }
+
+            // Create a dialog to show connection information
+            javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
+            dialog.setTitle("Connection");
+            dialog.setHeaderText("Connection from " + node1 + " to " + node2);
+
+            // Create the dialog content layout
+            javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
+            ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+            dialogPane.getButtonTypes().add(okButton);
+
+            GridPane grid = new GridPane();
+            grid.setHgap(10.0);
+            grid.setVgap(10.0);
+            grid.setPadding(new Insets(20, 150, 10, 10));
+
+            // Create non-editable fields
+            TextField nameField = new TextField(edge.getName());
+            nameField.setEditable(false);
+            TextField timeField = new TextField(Integer.toString(edge.getWeight()));
+            timeField.setEditable(false);
+
+            grid.add(new Label("Name:"), 0, 0);
+            grid.add(nameField, 1, 0);
+            grid.add(new Label("Time:"), 0, 1);
+            grid.add(timeField, 1, 1);
+
+            dialogPane.setContent(grid);
+
+            // Show the dialog
+            dialog.showAndWait();
+
+            // Reset selection after showing connection information
+            for (Circle circle : selectedCircles) {
+                circle.setFill(Color.BLUE);
+            }
+            selectedCircles.clear();
+        });
+
+        //4.2.5 Change Connection button functionality
+        changeConnection.setOnAction(event -> {
+            // Check if exactly two places are selected
+            if (selectedCircles.size() != 2) {
+                showError("Two places must be selected!");
+                return;
+            }
+
+            // Find the Place objects corresponding to the selected circles
+            Place place1 = null;
+            Place place2 = null;
+
+            for (Map.Entry<String, Place> entry : placeMap.entrySet()) {
+                Place place = entry.getValue();
+                if (Math.abs(place.getX() - selectedCircles.get(0).getCenterX()) < 0.1 &&
+                        Math.abs(place.getY() - selectedCircles.get(0).getCenterY()) < 0.1) {
+                    place1 = place;
+                }
+                if (Math.abs(place.getX() - selectedCircles.get(1).getCenterX()) < 0.1 &&
+                        Math.abs(place.getY() - selectedCircles.get(1).getCenterY()) < 0.1) {
+                    place2 = place;
+                }
+            }
+
+            if (place1 == null || place2 == null) {
+                showError("Could not identify the selected places.");
+                return;
+            }
+
+            String node1 = place1.getName();
+            String node2 = place2.getName();
+
+            // Check if a connection exists between the selected places
+            Edge<String> edge = graph.getEdgeBetween(node1, node2);
+            if (edge == null) {
+                showError("There is no connection between the selected places.");
+                return;
+            }
+
+            // Create a dialog to edit connection time
+            javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
+            dialog.setTitle("Connection");
+            dialog.setHeaderText("Connection from " + node1 + " to " + node2);
+
+            // Create the dialog content layout
+            javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
+            ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+            ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+            dialogPane.getButtonTypes().addAll(okButton, cancelButton);
+
+            GridPane grid = new GridPane();
+            grid.setHgap(10.0);
+            grid.setVgap(10.0);
+            grid.setPadding(new Insets(20, 150, 10, 10));
+
+            // Create fields: name (non-editable), time (editable)
+            TextField nameField = new TextField(edge.getName());
+            nameField.setEditable(false);
+            TextField timeField = new TextField(); // Empty initially, as shown in the assignment
+
+            grid.add(new Label("Name:"), 0, 0);
+            grid.add(nameField, 1, 0);
+            grid.add(new Label("Time:"), 0, 1);
+            grid.add(timeField, 1, 1);
+
+            dialogPane.setContent(grid);
+
+            // Show the dialog and process the result
+            dialog.showAndWait().ifPresent(response -> {
+                if (response == okButton) {
+                    // Validate and save the new time
+                    String timeText = timeField.getText().trim();
+
+                    try {
+                        int newTime = Integer.parseInt(timeText);
+                        if (newTime < 0) {
+                            showError("Time must be a positive number.");
+                            return;
+                        }
+
+                        // Update the connection weight in the graph
+                        graph.setConnectionWeight(node1, node2, newTime);
+                        hasUnsavedChanges = true;
+                    } catch (NumberFormatException e) {
+                        showError("Time must consist of digits only.");
+                    }
+                }
+
+                // Reset selection after changing connection information
+                for (Circle circle : selectedCircles) {
+                    circle.setFill(Color.BLUE);
+                }
+                selectedCircles.clear();
             });
         });
 
