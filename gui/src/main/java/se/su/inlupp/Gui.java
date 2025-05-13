@@ -296,7 +296,7 @@ public class Gui extends Application {
                     selectedCircles.add(circle);
                 } else {
                     // Visa felmeddelande eller ignorera klicket
-                    showError("Du kan inte markera mer än två ställen samtidigt!");
+                    showError("You can not mark more than two places at a time");
                 }
             } else {
                 // Avmarkera
