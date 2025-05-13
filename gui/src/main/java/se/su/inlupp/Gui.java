@@ -52,13 +52,24 @@ public class Gui extends Application {
     private Map<String, Place> placeMap = new HashMap<>();
     private double extraHeight;
 
+    Button findPath;
+    Button showConnection;
+    Button newPlace;
+    Button newConnection;
+    Button changeConnection;
+
+
     public void start(Stage primaryStage) {
+
+
         // Grundstruktur för fönstret
         BorderPane root = new BorderPane();
         pane.setStyle("-fx-background-color: lightgray;");
         //overlayPane.setStyle("-fx-background-color: transparent;"); //Tillbaka till transparent
         overlayPane.setStyle("-fx-background-color: transparent;");
         overlayPane.setPickOnBounds(false);
+
+
 
         // En lyssnare som explicit ändrar överlappspanelens storlek
         imageView.boundsInParentProperty().addListener((obs, oldBounds, newBounds) -> {
@@ -82,11 +93,13 @@ public class Gui extends Application {
         menuBar.getMenus().add(fileMenu);
 
         // Knappar för funktioner
-        Button findPath = new Button("Find Path");
-        Button showConnection = new Button("Show Connection");
-        Button newPlace = new Button("New Place");
-        Button newConnection = new Button("New Connection");
-        Button changeConnection = new Button("Change Connection");
+         findPath = new Button("Find Path");
+         showConnection = new Button("Show Connection");
+         newPlace = new Button("New Place");
+         newConnection = new Button("New Connection");
+         changeConnection = new Button("Change Connection");
+
+        disableAllButtons();
 
         //4.2.1 Funktionalitet för Ny Plats-knappen
         newPlace.setOnAction(event -> {
@@ -225,7 +238,7 @@ public class Gui extends Application {
             });
         }); //slut på newConnction
 
-        //4.2.4 Funktionalitet för Visa Förbindelse-knappen
+        //4.2.4 ShowConnection
         showConnection.setOnAction(event -> {
             // Inaktivera knapp när den klickas
             disableButton(showConnection);
@@ -452,6 +465,14 @@ public class Gui extends Application {
 
         //4.1.1 New Map
         newMap.setOnAction(event -> {
+            if (confirmDiscardChanges()){ //Frågetecken gällande dessa. Senaste ändringen bara. Bör kontro
+                graph = new ListGraph<>();
+                placeMap.clear();
+                overlayPane.getChildren().clear();
+                selectedCircles.clear();
+
+            }
+
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Choose a map image");
             fileChooser.getExtensionFilters().addAll(
@@ -459,6 +480,8 @@ public class Gui extends Application {
             );
             File selectedFile = fileChooser.showOpenDialog(primaryStage);
             if (selectedFile != null) {
+
+                
                 imageFilePath = selectedFile.getAbsolutePath();
                 Image image = new Image(selectedFile.toURI().toString());
                 imageView.setImage(image);
@@ -472,6 +495,8 @@ public class Gui extends Application {
                 primaryStage.setHeight(image.getHeight() + extraHeight); // Justera för menyer och knappar
 
                 hasUnsavedChanges = true;
+
+                enableAllButtons();
             }
         });
 
@@ -499,6 +524,8 @@ public class Gui extends Application {
             File selectedFile = fileChooser.showOpenDialog(primaryStage);
             if (selectedFile != null) {
                 loadGraphFromFile(selectedFile);
+
+                enableAllButtons();
             }
         });
 
@@ -545,6 +572,24 @@ public class Gui extends Application {
     // Inaktiverar en knapp
     private void disableButton(Button buttonName) {
         buttonName.setDisable(true);
+    }
+
+    //Ny metod för att disablea alla knappar från start
+    private void disableAllButtons(){
+        disableButton(newPlace);
+        disableButton(newConnection);
+        disableButton(showConnection);
+        disableButton(changeConnection);
+        disableButton(findPath);
+    }
+
+    //Ny metod för att enablea efter map har öppnats , se punkt 4.2
+    private void enableAllButtons(){
+        enableButton(newPlace);
+        enableButton(newConnection);
+        enableButton(showConnection);
+        enableButton(changeConnection);
+        enableButton(findPath);
     }
 
     // Ny metod för att kontrollera om två platser är valda
@@ -630,6 +675,9 @@ public class Gui extends Application {
         return alert.showAndWait().orElse(cancelButton) == okButton;
     }
 
+
+
+
     // Visar felmeddelande i dialogruta
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -693,9 +741,6 @@ public class Gui extends Application {
             drawPlace(p);
         }
 
-        // TODO implementera funktionalitet för förbindelser
-        // koppla musklick 1, musklick 2 (MAX 2) och koppla de till plats
-        // graph.net .någonting .connect?
     }
 
     private String createSaveStringOfGraphs(){
@@ -711,6 +756,8 @@ public class Gui extends Application {
         }
         return sb.toString();
     }
+
+
 
     public static void main(String[] args) {
         launch(args);
