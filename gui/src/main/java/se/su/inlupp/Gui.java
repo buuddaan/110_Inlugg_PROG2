@@ -42,10 +42,10 @@ public class Gui extends Application {
 
     //Datastruktur för att hantera grafen och kartvyn
     Graph<String> graph = new ListGraph<>();
-    Pane overlayPane = new Pane(); //transparant lager över bilden för koordinater
+    Pane overlayPane = new Pane(); // Transparent lager över bilden för koordinater
     ImageView imageView = new ImageView();
     StackPane pane = new StackPane(imageView, overlayPane);
-    private List<Circle> selectedCircles = new ArrayList<>(); // Denna rad ska läggas till
+    private List<Circle> selectedCircles = new ArrayList<>();
 
     private boolean hasUnsavedChanges = false;
     private String imageFilePath = "";
@@ -60,9 +60,9 @@ public class Gui extends Application {
         overlayPane.setStyle("-fx-background-color: transparent;");
         overlayPane.setPickOnBounds(false);
 
-        // En lyssnare som explicit ändrar positionen av
+        // En lyssnare som explicit ändrar överlappspanelens storlek
         imageView.boundsInParentProperty().addListener((obs, oldBounds, newBounds) -> {
-            // Apply the exact bounds of the ImageView to the overlay
+            // Applicera exakta mått från ImageView till överlappspanelen
             overlayPane.setMaxWidth(newBounds.getWidth());
             overlayPane.setMaxHeight(newBounds.getHeight());
         });
@@ -88,15 +88,14 @@ public class Gui extends Application {
         Button newConnection = new Button("New Connection");
         Button changeConnection = new Button("Change Connection");
 
-        //4.2.1 NewPlace knappens funktionalitet
+        //4.2.1 Funktionalitet för Ny Plats-knappen
         newPlace.setOnAction(event -> {
-
-            //för rätt musval
+            // För rätt muspekare
             overlayPane.setCursor(Cursor.CROSSHAIR);
-            //Inaktivera
-            newPlace.setDisable(true);
+            // Inaktivera knappen
+            disableButton(newPlace);
 
-            //Style grejer, kolla i uppgiftsbeskrivningen
+            // Ställ in händelsehanterare för musklick
             overlayPane.setOnMouseClicked(e -> {
 
                 javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog();
@@ -125,17 +124,24 @@ public class Gui extends Application {
             });
         });
 
-        //4.2.3 New Connection button function
+        //4.2.3 Funktionalitet för Ny Förbindelse-knappen
         newConnection.setOnAction(event -> {
+            // Inaktivera knapp när den klickas
+            disableButton(newConnection);
+
             Place[] places = getSelectedPlaces();
-            if (places == null) return;
+            if (places == null) {
+                enableButton(newConnection); // Återaktivera om validering misslyckas
+                return;
+            }
 
             final String node1 = places[0].getName();
             final String node2 = places[1].getName();
 
-            // Check if connection already exists
+            // Kontrollera om förbindelse redan finns
             if (graph.getEdgeBetween(node1, node2) != null) {
                 showError("There already is a connection between the selected places.");
+                enableButton(newConnection); // Återaktivera knappen
                 return;
             }
 
@@ -204,27 +210,40 @@ public class Gui extends Application {
                     // Set unsaved changes flag
                     hasUnsavedChanges = true;
 
-                    // Reset selected circles
+                    // Återställ valda cirklar
                     resetSelectedCircles();
+
+                    // Återaktivera knappen
+                    enableButton(newConnection);
                 } else {
-                    // User clicked Cancel, just reset the selections
+                    // Användaren klickade på Avbryt, återställ bara valen
                     resetSelectedCircles();
+
+                    // Återaktivera knappen
+                    enableButton(newConnection);
                 }
             });
         }); //slut på newConnction
 
-        //4.2.4 Show Connection button functionality
+        //4.2.4 Funktionalitet för Visa Förbindelse-knappen
         showConnection.setOnAction(event -> {
+            // Inaktivera knapp när den klickas
+            disableButton(showConnection);
+
             Place[] places = getSelectedPlaces();
-            if (places == null) return;
+            if (places == null) {
+                enableButton(showConnection); // Återaktivera
+                return;
+            }
 
             String node1 = places[0].getName();
             String node2 = places[1].getName();
 
-            // Check if a connection exists between the selected places
+            // Kontrollera om en förbindelse finns mellan de valda platserna
             Edge<String> edge = graph.getEdgeBetween(node1, node2);
             if (edge == null) {
                 showError("There is no connection between the selected places.");
+                enableButton(showConnection); // Återaktivera knappen
                 return;
             }
 
@@ -256,25 +275,35 @@ public class Gui extends Application {
 
             dialogPane.setContent(grid);
 
-            // Show the dialog
+            // Visa dialogrutan
             dialog.showAndWait();
 
-            // Reset selection after showing connection information
+            // Återställ val efter att ha visat förbindelseinformation
             resetSelectedCircles();
+
+            // Återaktivera knappen
+            enableButton(showConnection);
         });
 
-        //4.2.5 Change Connection button functionality
+        //4.2.5 Funktionalitet för Ändra Förbindelse-knappen
         changeConnection.setOnAction(event -> {
+            // Inaktivera knapp när den klickas
+            disableButton(changeConnection);
+
             Place[] places = getSelectedPlaces();
-            if (places == null) return;
+            if (places == null) {
+                enableButton(changeConnection); // Återaktivera om validering misslyckas
+                return;
+            }
 
             String node1 = places[0].getName();
             String node2 = places[1].getName();
 
-            // Check if a connection exists between the selected places
+            // Kontrollera om en förbindelse finns mellan de valda platserna
             Edge<String> edge = graph.getEdgeBetween(node1, node2);
             if (edge == null) {
                 showError("There is no connection between the selected places.");
+                enableButton(changeConnection); // Återaktivera knappen
                 return;
             }
 
@@ -327,24 +356,34 @@ public class Gui extends Application {
                     }
                 }
 
-                // Reset selection after changing connection information
+                // Återställ val efter ändring av förbindelseinformation
                 resetSelectedCircles();
+
+                // Återaktivera knappen
+                enableButton(changeConnection);
             });
         });
 
-        //4.2.6 Find Path button functionality
+        //4.2.6 Funktionalitet för Hitta Väg-knappen
         findPath.setOnAction(event -> {
+            // Inaktivera knapp när den klickas
+            disableButton(findPath);
+
             Place[] places = getSelectedPlaces();
-            if (places == null) return;
+            if (places == null) {
+                enableButton(findPath); // Återaktivera om validering misslyckas
+                return;
+            }
 
             String node1 = places[0].getName();
             String node2 = places[1].getName();
 
-            // Find a path between the selected places
+            // Hitta en väg mellan de valda platserna
             List<Edge<String>> path = graph.getPath(node1, node2);
 
             if (path == null) {
                 showError("There is no path between the selected places.");
+                enableButton(findPath); // Återaktivera knappen
                 return;
             }
 
@@ -385,11 +424,14 @@ public class Gui extends Application {
 
             dialogPane.setContent(content);
 
-            // Show the dialog
+            // Visa dialogrutan
             dialog.showAndWait();
 
-            // Reset selection after showing path information
+            // Återställ val efter att ha visat väginformation
             resetSelectedCircles();
+
+            // Återaktivera knappen
+            enableButton(findPath);
         });
 
         HBox hbox = new HBox(10);
@@ -427,7 +469,7 @@ public class Gui extends Application {
                 pane.getChildren().setAll(imageView, overlayPane);
                 pane.setPrefSize(image.getWidth(), image.getHeight());
                 primaryStage.setWidth(image.getWidth());
-                primaryStage.setHeight(image.getHeight() + extraHeight); //tillagt 20 här bara /EF tog bort den härifrån
+                primaryStage.setHeight(image.getHeight() + extraHeight); // Justera för menyer och knappar
 
                 hasUnsavedChanges = true;
             }
@@ -470,9 +512,9 @@ public class Gui extends Application {
             File selectedFile = fileChooser.showSaveDialog(primaryStage);
             if (selectedFile != null) {
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(selectedFile))) {
-                    bw.write(imageFilePath); //Senare lägga till bw.write("file:"+imageFilePath); istället eftersom tidigare filer har det. Ingen funktionalitet för split än bara
+                    bw.write(imageFilePath); // Spara bildfilen
                     bw.newLine();
-                    bw.write(createSaveStringOfGraphs()); // Placeholder
+                    bw.write(createSaveStringOfGraphs()); // Spara platsinformation
                     bw.newLine();
                     hasUnsavedChanges = false;
                 } catch (Exception e) {
@@ -493,10 +535,16 @@ public class Gui extends Application {
         });
     }
 
+    // Aktiverar en knapp och återställer muspekaren
     private void enableButton(Button buttonName) {
         buttonName.setDisable(false);
         overlayPane.setCursor(Cursor.DEFAULT);
-        overlayPane.setOnMouseClicked(null); // Rensa eventhandler
+        overlayPane.setOnMouseClicked(null); // Rensar eventhanterare
+    }
+
+    // Inaktiverar en knapp
+    private void disableButton(Button buttonName) {
+        buttonName.setDisable(true);
     }
 
     // Ny metod för att kontrollera om två platser är valda
@@ -545,6 +593,7 @@ public class Gui extends Application {
         selectedCircles.clear();
     }
 
+    // Laddar graf från fil
     private void loadGraphFromFile(File file) {
         try (Scanner scanner = new Scanner(file)) {
             String imagePath = scanner.nextLine();
@@ -553,15 +602,13 @@ public class Gui extends Application {
             imageView.setPreserveRatio(true);
             String graphString = scanner.nextLine();
             addPlacesFromFile(graphString);
-            // Här 2 rader
-            // Don't resize the image, keep it at its original dimensions
+            // Ändra inte bildens storlek, behåll ursprungliga dimensioner
             imageView.setFitWidth(0);
             imageView.setFitHeight(0);
 
             pane.getChildren().setAll(imageView, overlayPane);
-            pane.setPrefSize(image.getWidth(), image.getHeight()); //Tillagd för test 9/5 23:49
+            pane.setPrefSize(image.getWidth(), image.getHeight());
 
-            //och här
             hasUnsavedChanges = false;
 
         } catch (Exception e) {
@@ -569,7 +616,7 @@ public class Gui extends Application {
         }
     }
 
-    // Enligt figur 6, error
+    // Bekräftar om osparade ändringar ska kastas
     private boolean confirmDiscardChanges() {
         if (!hasUnsavedChanges) return true;
 
@@ -618,7 +665,7 @@ public class Gui extends Application {
             }
         });
 
-        overlayPane.getChildren().add(circle); // Glöm inte lägga till cirkeln i vyn
+        overlayPane.getChildren().add(circle); // Lägg till cirkeln i vyn
     }
 
     // Ritar en förbindelse (linje) mellan två platser
@@ -626,7 +673,7 @@ public class Gui extends Application {
         Line line = new Line(from.getX(), from.getY(), to.getX(), to.getY());
         line.setStroke(Color.BLACK);
         line.setStrokeWidth(2);
-        // Add the line to overlayPane instead of pane, and at index 0 so it's behind the circles
+        // Lägg till linjen i overlayPane istället för pane, och på index 0 så den hamnar bakom cirklarna
         overlayPane.getChildren().add(0, line);
     }
 
@@ -646,10 +693,9 @@ public class Gui extends Application {
             drawPlace(p);
         }
 
-//TODO implementera funktionalitet för connection
-        //koppla musklick 1, musklick 2 (MAX 2) och koppla de till plats
+        // TODO implementera funktionalitet för förbindelser
+        // koppla musklick 1, musklick 2 (MAX 2) och koppla de till plats
         // graph.net .någonting .connect?
-
     }
 
     private String createSaveStringOfGraphs(){
