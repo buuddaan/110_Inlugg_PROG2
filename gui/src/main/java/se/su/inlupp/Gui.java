@@ -416,6 +416,156 @@ public class Gui extends Application {
             });
         });
 
+        showConnection.setOnAction(event -> {
+            if (selectedCircles.size() != 2) {
+                showError("You must select exactly two places.");
+                return;
+            }
+
+            Place place1 = null;
+            Place place2 = null;
+
+            for (Place place : placeMap.values()) {
+                if (Math.abs(place.getX() - selectedCircles.get(0).getCenterX()) < 0.1 &&
+                        Math.abs(place.getY() - selectedCircles.get(0).getCenterY()) < 0.1) {
+                    place1 = place;
+                }
+                if (Math.abs(place.getX() - selectedCircles.get(1).getCenterX()) < 0.1 &&
+                        Math.abs(place.getY() - selectedCircles.get(1).getCenterY()) < 0.1) {
+                    place2 = place;
+                }
+            }
+
+            if (place1 == null || place2 == null) {
+                showError("Could not identify the selected places.");
+                return;
+            }
+
+            Edge edge = graph.getEdgeBetween(place1.getName(), place2.getName());
+            if (edge == null) {
+                showError("There is no connection between the selected places.");
+                return;
+            }
+
+            // Show dialog with name and time (non-editable)
+            javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
+            dialog.setTitle("Connection Info");
+            dialog.setHeaderText("Connection between " + place1.getName() + " and " + place2.getName());
+
+            ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+            ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+            dialog.getDialogPane().getButtonTypes().addAll(okButton, cancelButton);
+
+            GridPane grid = new GridPane();
+            grid.setHgap(10);
+            grid.setVgap(10);
+            grid.setPadding(new Insets(20, 150, 10, 10));
+
+            TextField nameField = new TextField(edge.getName());
+            nameField.setEditable(false);
+
+            TextField timeField = new TextField(String.valueOf(edge.getWeight()));
+            timeField.setEditable(false);
+
+            grid.add(new Label("Name:"), 0, 0);
+            grid.add(nameField, 1, 0);
+            grid.add(new Label("Time:"), 0, 1);
+            grid.add(timeField, 1, 1);
+
+            dialog.getDialogPane().setContent(grid);
+            dialog.showAndWait();
+
+            // Reset selections
+            for (Circle circle : selectedCircles) {
+                circle.setFill(Color.BLUE);
+            }
+            selectedCircles.clear();
+        });
+
+        changeConnection.setOnAction(event -> {
+            if (selectedCircles.size() != 2) {
+                showError("You must select exactly two places.");
+                return;
+            }
+
+            Place place1 = null;
+            Place place2 = null;
+
+            for (Place place : placeMap.values()) {
+                if (Math.abs(place.getX() - selectedCircles.get(0).getCenterX()) < 0.1 &&
+                        Math.abs(place.getY() - selectedCircles.get(0).getCenterY()) < 0.1) {
+                    place1 = place;
+                }
+                if (Math.abs(place.getX() - selectedCircles.get(1).getCenterX()) < 0.1 &&
+                        Math.abs(place.getY() - selectedCircles.get(1).getCenterY()) < 0.1) {
+                    place2 = place;
+                }
+            }
+
+            if (place1 == null || place2 == null) {
+                showError("Could not identify the selected places.");
+                return;
+            }
+
+            Edge edge = graph.getEdgeBetween(place1.getName(), place2.getName());
+            if (edge == null) {
+                showError("There is no connection to change between the selected places.");
+                return;
+            }
+
+            // Dialog to change time (name is shown but non-editable)
+            javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
+            dialog.setTitle("Change Connection");
+            dialog.setHeaderText("Change time for connection between " + place1.getName() + " and " + place2.getName());
+
+            ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+            ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+            dialog.getDialogPane().getButtonTypes().addAll(okButton, cancelButton);
+
+            GridPane grid = new GridPane();
+            grid.setHgap(10);
+            grid.setVgap(10);
+            grid.setPadding(new Insets(20, 150, 10, 10));
+
+            TextField nameField = new TextField(edge.getName());
+            nameField.setEditable(false);
+
+            TextField timeField = new TextField();
+
+            grid.add(new Label("Name:"), 0, 0);
+            grid.add(nameField, 1, 0);
+            grid.add(new Label("New Time:"), 0, 1);
+            grid.add(timeField, 1, 1);
+
+            dialog.getDialogPane().setContent(grid);
+            Place finalPlace = place1;
+            Place finalPlace1 = place2;
+            dialog.showAndWait().ifPresent(response -> {
+                if (response == okButton) {
+                    try {
+                        int newTime = Integer.parseInt(timeField.getText().trim());
+                        if (newTime < 0) {
+                            showError("Time must be a positive number.");
+                            return;
+                        }
+
+                        // Update both directions (since the graph is undirected)
+                        graph.connect(finalPlace.getName(), finalPlace1.getName(), edge.getName(), newTime);
+                        hasUnsavedChanges = true;
+
+                    } catch (NumberFormatException e) {
+                        showError("Invalid number for time.");
+                    }
+                }
+            });
+
+            // Reset selections
+            for (Circle circle : selectedCircles) {
+                circle.setFill(Color.BLUE);
+            }
+            selectedCircles.clear();
+        });
+
         HBox hbox = new HBox(10);
         hbox.getChildren().addAll(findPath, showConnection, newPlace, newConnection, changeConnection);
         hbox.setAlignment(Pos.CENTER);
