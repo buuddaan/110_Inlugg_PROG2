@@ -127,35 +127,11 @@ public class Gui extends Application {
 
         //4.2.3 New Connection button function
         newConnection.setOnAction(event -> {
-            if (selectedCircles.size() != 2) {
-                // Error when not exactly two places are selected
-                showError("Two places must be selected!");
-                return;
-            }
+            Place[] places = getSelectedPlaces();
+            if (places == null) return;
 
-            // Find the Place objects corresponding to the selected circles
-            Place place1 = null;
-            Place place2 = null;
-
-            for (Map.Entry<String, Place> entry : placeMap.entrySet()) {
-                Place place = entry.getValue();
-                if (Math.abs(place.getX() - selectedCircles.get(0).getCenterX()) < 0.1 &&
-                        Math.abs(place.getY() - selectedCircles.get(0).getCenterY()) < 0.1) {
-                    place1 = place;
-                }
-                if (Math.abs(place.getX() - selectedCircles.get(1).getCenterX()) < 0.1 &&
-                        Math.abs(place.getY() - selectedCircles.get(1).getCenterY()) < 0.1) {
-                    place2 = place;
-                }
-            }
-
-            if (place1 == null || place2 == null) {
-                showError("Could not identify the selected places.");
-                return;
-            }
-
-            final String node1 = place1.getName();
-            final String node2 = place2.getName();
+            final String node1 = places[0].getName();
+            final String node2 = places[1].getName();
 
             // Check if connection already exists
             if (graph.getEdgeBetween(node1, node2) != null) {
@@ -194,8 +170,8 @@ public class Gui extends Application {
             dialogPane.setContent(grid);
 
             // Show dialog and process result
-            Place finalPlace = place1;
-            Place finalPlace1 = place2;
+            Place place1 = places[0];
+            Place place2 = places[1];
             dialog.showAndWait().ifPresent(response -> {
                 if (response == okButton) { // Note: Using okButton instead of ButtonType.OK
                     String name = nameField.getText().trim();
@@ -223,57 +199,27 @@ public class Gui extends Application {
                     graph.connect(node1, node2, name, time);
 
                     // Draw the connection on the map
-                    drawConnection(finalPlace, finalPlace1);
+                    drawConnection(place1, place2);
 
                     // Set unsaved changes flag
                     hasUnsavedChanges = true;
 
                     // Reset selected circles
-                    for (Circle circle : selectedCircles) {
-                        circle.setFill(Color.BLUE);
-                    }
-                    selectedCircles.clear();
+                    resetSelectedCircles();
                 } else {
                     // User clicked Cancel, just reset the selections
-                    for (Circle circle : selectedCircles) {
-                        circle.setFill(Color.BLUE);
-                    }
-                    selectedCircles.clear();
+                    resetSelectedCircles();
                 }
             });
         }); //slut på newConnction
 
         //4.2.4 Show Connection button functionality
         showConnection.setOnAction(event -> {
-            // Check if exactly two places are selected
-            if (selectedCircles.size() != 2) {
-                showError("Two places must be selected!");
-                return;
-            }
+            Place[] places = getSelectedPlaces();
+            if (places == null) return;
 
-            // Find the Place objects corresponding to the selected circles
-            Place place1 = null;
-            Place place2 = null;
-
-            for (Map.Entry<String, Place> entry : placeMap.entrySet()) {
-                Place place = entry.getValue();
-                if (Math.abs(place.getX() - selectedCircles.get(0).getCenterX()) < 0.1 &&
-                        Math.abs(place.getY() - selectedCircles.get(0).getCenterY()) < 0.1) {
-                    place1 = place;
-                }
-                if (Math.abs(place.getX() - selectedCircles.get(1).getCenterX()) < 0.1 &&
-                        Math.abs(place.getY() - selectedCircles.get(1).getCenterY()) < 0.1) {
-                    place2 = place;
-                }
-            }
-
-            if (place1 == null || place2 == null) {
-                showError("Could not identify the selected places.");
-                return;
-            }
-
-            String node1 = place1.getName();
-            String node2 = place2.getName();
+            String node1 = places[0].getName();
+            String node2 = places[1].getName();
 
             // Check if a connection exists between the selected places
             Edge<String> edge = graph.getEdgeBetween(node1, node2);
@@ -314,43 +260,16 @@ public class Gui extends Application {
             dialog.showAndWait();
 
             // Reset selection after showing connection information
-            for (Circle circle : selectedCircles) {
-                circle.setFill(Color.BLUE);
-            }
-            selectedCircles.clear();
+            resetSelectedCircles();
         });
 
         //4.2.5 Change Connection button functionality
         changeConnection.setOnAction(event -> {
-            // Check if exactly two places are selected
-            if (selectedCircles.size() != 2) {
-                showError("Two places must be selected!");
-                return;
-            }
+            Place[] places = getSelectedPlaces();
+            if (places == null) return;
 
-            // Find the Place objects corresponding to the selected circles
-            Place place1 = null;
-            Place place2 = null;
-
-            for (Map.Entry<String, Place> entry : placeMap.entrySet()) {
-                Place place = entry.getValue();
-                if (Math.abs(place.getX() - selectedCircles.get(0).getCenterX()) < 0.1 &&
-                        Math.abs(place.getY() - selectedCircles.get(0).getCenterY()) < 0.1) {
-                    place1 = place;
-                }
-                if (Math.abs(place.getX() - selectedCircles.get(1).getCenterX()) < 0.1 &&
-                        Math.abs(place.getY() - selectedCircles.get(1).getCenterY()) < 0.1) {
-                    place2 = place;
-                }
-            }
-
-            if (place1 == null || place2 == null) {
-                showError("Could not identify the selected places.");
-                return;
-            }
-
-            String node1 = place1.getName();
-            String node2 = place2.getName();
+            String node1 = places[0].getName();
+            String node2 = places[1].getName();
 
             // Check if a connection exists between the selected places
             Edge<String> edge = graph.getEdgeBetween(node1, node2);
@@ -409,44 +328,17 @@ public class Gui extends Application {
                 }
 
                 // Reset selection after changing connection information
-                for (Circle circle : selectedCircles) {
-                    circle.setFill(Color.BLUE);
-                }
-                selectedCircles.clear();
+                resetSelectedCircles();
             });
         });
 
-        //4.2.6 Find Path button function
+        //4.2.6 Find Path button functionality
         findPath.setOnAction(event -> {
-            // Check if exactly two places are selected
-            if (selectedCircles.size() != 2) {
-                showError("Two places must be selected!");
-                return;
-            }
+            Place[] places = getSelectedPlaces();
+            if (places == null) return;
 
-            // Find the Place objects corresponding to the selected circles
-            Place place1 = null;
-            Place place2 = null;
-
-            for (Map.Entry<String, Place> entry : placeMap.entrySet()) {
-                Place place = entry.getValue();
-                if (Math.abs(place.getX() - selectedCircles.get(0).getCenterX()) < 0.1 &&
-                        Math.abs(place.getY() - selectedCircles.get(0).getCenterY()) < 0.1) {
-                    place1 = place;
-                }
-                if (Math.abs(place.getX() - selectedCircles.get(1).getCenterX()) < 0.1 &&
-                        Math.abs(place.getY() - selectedCircles.get(1).getCenterY()) < 0.1) {
-                    place2 = place;
-                }
-            }
-
-            if (place1 == null || place2 == null) {
-                showError("Could not identify the selected places.");
-                return;
-            }
-
-            String node1 = place1.getName();
-            String node2 = place2.getName();
+            String node1 = places[0].getName();
+            String node2 = places[1].getName();
 
             // Find a path between the selected places
             List<Edge<String>> path = graph.getPath(node1, node2);
@@ -497,10 +389,7 @@ public class Gui extends Application {
             dialog.showAndWait();
 
             // Reset selection after showing path information
-            for (Circle circle : selectedCircles) {
-                circle.setFill(Color.BLUE);
-            }
-            selectedCircles.clear();
+            resetSelectedCircles();
         });
 
         HBox hbox = new HBox(10);
@@ -608,6 +497,52 @@ public class Gui extends Application {
         buttonName.setDisable(false);
         overlayPane.setCursor(Cursor.DEFAULT);
         overlayPane.setOnMouseClicked(null); // Rensa eventhandler
+    }
+
+    // Ny metod för att kontrollera om två platser är valda
+    private boolean checkTwoPlacesSelected() {
+        if (selectedCircles.size() != 2) {
+            showError("Two places must be selected!");
+            return false;
+        }
+        return true;
+    }
+
+    // Ny metod för att hämta de två valda platserna
+    private Place[] getSelectedPlaces() {
+        if (!checkTwoPlacesSelected()) {
+            return null;
+        }
+
+        Place place1 = null;
+        Place place2 = null;
+
+        for (Map.Entry<String, Place> entry : placeMap.entrySet()) {
+            Place place = entry.getValue();
+            if (Math.abs(place.getX() - selectedCircles.get(0).getCenterX()) < 0.1 &&
+                    Math.abs(place.getY() - selectedCircles.get(0).getCenterY()) < 0.1) {
+                place1 = place;
+            }
+            if (Math.abs(place.getX() - selectedCircles.get(1).getCenterX()) < 0.1 &&
+                    Math.abs(place.getY() - selectedCircles.get(1).getCenterY()) < 0.1) {
+                place2 = place;
+            }
+        }
+
+        if (place1 == null || place2 == null) {
+            showError("Could not identify the selected places.");
+            return null;
+        }
+
+        return new Place[]{place1, place2};
+    }
+
+    // Ny metod för att återställa valda cirklar
+    private void resetSelectedCircles() {
+        for (Circle circle : selectedCircles) {
+            circle.setFill(Color.BLUE);
+        }
+        selectedCircles.clear();
     }
 
     private void loadGraphFromFile(File file) {
