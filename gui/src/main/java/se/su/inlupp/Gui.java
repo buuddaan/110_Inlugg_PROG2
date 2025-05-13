@@ -416,6 +416,93 @@ public class Gui extends Application {
             });
         });
 
+        //4.2.6 Find Path button function
+        findPath.setOnAction(event -> {
+            // Check if exactly two places are selected
+            if (selectedCircles.size() != 2) {
+                showError("Two places must be selected!");
+                return;
+            }
+
+            // Find the Place objects corresponding to the selected circles
+            Place place1 = null;
+            Place place2 = null;
+
+            for (Map.Entry<String, Place> entry : placeMap.entrySet()) {
+                Place place = entry.getValue();
+                if (Math.abs(place.getX() - selectedCircles.get(0).getCenterX()) < 0.1 &&
+                        Math.abs(place.getY() - selectedCircles.get(0).getCenterY()) < 0.1) {
+                    place1 = place;
+                }
+                if (Math.abs(place.getX() - selectedCircles.get(1).getCenterX()) < 0.1 &&
+                        Math.abs(place.getY() - selectedCircles.get(1).getCenterY()) < 0.1) {
+                    place2 = place;
+                }
+            }
+
+            if (place1 == null || place2 == null) {
+                showError("Could not identify the selected places.");
+                return;
+            }
+
+            String node1 = place1.getName();
+            String node2 = place2.getName();
+
+            // Find a path between the selected places
+            List<Edge<String>> path = graph.getPath(node1, node2);
+
+            if (path == null) {
+                showError("There is no path between the selected places.");
+                return;
+            }
+
+            // Create a dialog to show the path information
+            javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
+            dialog.setTitle("Message");
+            dialog.setHeaderText("The Path from " + node1 + " to " + node2 + ":");
+
+            // Create the dialog content
+            javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
+            ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+            dialogPane.getButtonTypes().add(okButton);
+
+            // Create content to display the path
+            VBox content = new VBox(5);
+            content.setPadding(new Insets(10));
+
+            int totalTime = 0;
+            String currentPlace = node1;
+
+            // For each edge in the path
+            for (Edge<String> edge : path) {
+                String nextPlace = edge.getDestination();
+                String connectionName = edge.getName();
+                int time = edge.getWeight();
+
+                totalTime += time;
+
+                Label segment = new Label("to " + nextPlace + " by " + connectionName + " takes " + time);
+                content.getChildren().add(segment);
+
+                currentPlace = nextPlace;
+            }
+
+            // Add total time
+            Label totalLabel = new Label("Total " + totalTime);
+            content.getChildren().add(totalLabel);
+
+            dialogPane.setContent(content);
+
+            // Show the dialog
+            dialog.showAndWait();
+
+            // Reset selection after showing path information
+            for (Circle circle : selectedCircles) {
+                circle.setFill(Color.BLUE);
+            }
+            selectedCircles.clear();
+        });
+
         HBox hbox = new HBox(10);
         hbox.getChildren().addAll(findPath, showConnection, newPlace, newConnection, changeConnection);
         hbox.setAlignment(Pos.CENTER);
