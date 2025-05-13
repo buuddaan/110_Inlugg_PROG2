@@ -1,8 +1,8 @@
-
 package se.su.inlupp;
 
 // Importer för JavaFX och IO
 import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
@@ -10,10 +10,12 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -117,9 +119,121 @@ public class Gui extends Application {
                     }
                 });
 
-                    // Återställer muslyssnaren så att man inte råkar skapa flerapane.setOnMouseClicked(null);
+                // Återställer muslyssnaren så att man inte råkar skapa flerapane.setOnMouseClicked(null);
                 enableButton(newPlace);
 
+            });
+        });
+
+        //4.2.3 New Connection button functionality
+        newConnection.setOnAction(event -> {
+            if (selectedCircles.size() != 2) {
+                // Fel när inte två platser är valda
+                showError("Two places must be selected!");
+                return;
+            }
+
+            // Find the Place objects corresponding to the selected circles
+            Place place1 = null;
+            Place place2 = null;
+
+            for (Map.Entry<String, Place> entry : placeMap.entrySet()) {
+                Place place = entry.getValue();
+                if (Math.abs(place.getX() - selectedCircles.get(0).getCenterX()) < 0.1 &&
+                        Math.abs(place.getY() - selectedCircles.get(0).getCenterY()) < 0.1) {
+                    place1 = place;
+                }
+                if (Math.abs(place.getX() - selectedCircles.get(1).getCenterX()) < 0.1 &&
+                        Math.abs(place.getY() - selectedCircles.get(1).getCenterY()) < 0.1) {
+                    place2 = place;
+                }
+            }
+
+            if (place1 == null || place2 == null) {
+                showError("Could not identify the selected places.");
+                return;
+            }
+
+            final String node1 = place1.getName();
+            final String node2 = place2.getName();
+
+            // Check if connection already exists
+            if (graph.getEdgeBetween(node1, node2) != null) {
+                showError("There already is a connection between the selected places.");
+                return;
+            }
+
+            // Create dialog for connection details
+            javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
+            dialog.setTitle("Connection");
+            dialog.setHeaderText("Connection from " + node1 + " to " + node2);
+
+            // Create dialog pane layout
+            javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
+            dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+            javafx.scene.layout.GridPane grid = new javafx.scene.layout.GridPane();
+            grid.setHgap(10.0); // Use double instead of int
+            grid.setVgap(10.0); // Use double instead of int
+            grid.setPadding(new Insets(20, 150, 10, 10));
+
+            TextField nameField = new TextField();
+            TextField timeField = new TextField();
+
+            grid.add(new Label("Name:"), 0, 0);
+            grid.add(nameField, 1, 0);
+            grid.add(new Label("Time:"), 0, 1);
+            grid.add(timeField, 1, 1);
+
+            dialogPane.setContent(grid);
+
+            // Show dialog and process result
+            Place finalPlace = place2;
+            Place finalPlace1 = place1;
+            dialog.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    String name = nameField.getText().trim();
+                    String timeText = timeField.getText().trim();
+
+                    // Validate input
+                    if (name.isEmpty()) {
+                        showError("Name cannot be empty.");
+                        return;
+                    }
+
+                    int time;
+                    try {
+                        time = Integer.parseInt(timeText);
+                        if (time < 0) {
+                            showError("Time must be a positive number.");
+                            return;
+                        }
+                    } catch (NumberFormatException e) {
+                        showError("Time must consist of digits only.");
+                        return;
+                    }
+
+                    // Create the connection in the graph
+                    graph.connect(node1, node2, name, time);
+
+                    // Draw the connection on the map
+                    drawConnection(finalPlace1, finalPlace);
+
+                    // Set unsaved changes flag
+                    hasUnsavedChanges = true;
+
+                    // Reset selected circles
+                    for (Circle circle : selectedCircles) {
+                        circle.setFill(Color.BLUE);
+                    }
+                    selectedCircles.clear();
+                } else {
+                    // User clicked Cancel, just reset the selections
+                    for (Circle circle : selectedCircles) {
+                        circle.setFill(Color.BLUE);
+                    }
+                    selectedCircles.clear();
+                }
             });
         });
 
@@ -230,8 +344,6 @@ public class Gui extends Application {
         overlayPane.setOnMouseClicked(null); // Rensa eventhandler
     }
 
-
-
     private void loadGraphFromFile(File file) {
         try (Scanner scanner = new Scanner(file)) {
             String imagePath = scanner.nextLine();
@@ -313,7 +425,8 @@ public class Gui extends Application {
         Line line = new Line(from.getX(), from.getY(), to.getX(), to.getY());
         line.setStroke(Color.BLACK);
         line.setStrokeWidth(2);
-        pane.getChildren().add(line);
+        // Add the line to overlayPane instead of pane, and at index 0 so it's behind the circles
+        overlayPane.getChildren().add(0, line);
     }
 
     private void addPlacesFromFile(String stringOfPlaces){
