@@ -126,9 +126,10 @@ public class Gui extends Application {
         });
 
         //4.2.3 New Connection button functionality
+        //4.2.3 New Connection button functionality
         newConnection.setOnAction(event -> {
             if (selectedCircles.size() != 2) {
-                // Fel när inte två platser är valda
+                // Error when not exactly two places are selected
                 showError("Two places must be selected!");
                 return;
             }
@@ -170,11 +171,17 @@ public class Gui extends Application {
 
             // Create dialog pane layout
             javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
-            dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+            // Create button types with OK on the left and Cancel on the right (like in image 2)
+            ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+            ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+            // Add button types in the order OK, Cancel (this is key to match image 2)
+            dialogPane.getButtonTypes().addAll(okButton, cancelButton);
 
             javafx.scene.layout.GridPane grid = new javafx.scene.layout.GridPane();
-            grid.setHgap(10.0); // Use double instead of int
-            grid.setVgap(10.0); // Use double instead of int
+            grid.setHgap(10.0);
+            grid.setVgap(10.0);
             grid.setPadding(new Insets(20, 150, 10, 10));
 
             TextField nameField = new TextField();
@@ -188,10 +195,10 @@ public class Gui extends Application {
             dialogPane.setContent(grid);
 
             // Show dialog and process result
-            Place finalPlace = place2;
-            Place finalPlace1 = place1;
+            Place finalPlace = place1;
+            Place finalPlace1 = place2;
             dialog.showAndWait().ifPresent(response -> {
-                if (response == ButtonType.OK) {
+                if (response == okButton) { // Note: Using okButton instead of ButtonType.OK
                     String name = nameField.getText().trim();
                     String timeText = timeField.getText().trim();
 
@@ -217,7 +224,7 @@ public class Gui extends Application {
                     graph.connect(node1, node2, name, time);
 
                     // Draw the connection on the map
-                    drawConnection(finalPlace1, finalPlace);
+                    drawConnection(finalPlace, finalPlace1);
 
                     // Set unsaved changes flag
                     hasUnsavedChanges = true;
