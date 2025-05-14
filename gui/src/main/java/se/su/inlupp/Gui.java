@@ -1,6 +1,7 @@
 package se.su.inlupp;
 
 // Importer för JavaFX och IO
+
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -28,15 +29,12 @@ import javafx.stage.Stage;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.WritableImage;
 import javafx.scene.SnapshotParameters;
+
 import javax.imageio.ImageIO;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 public class Gui extends Application {
 
@@ -70,7 +68,6 @@ public class Gui extends Application {
         overlayPane.setPickOnBounds(false);
 
 
-
         // En lyssnare som explicit ändrar överlappspanelens storlek
         imageView.boundsInParentProperty().addListener((obs, oldBounds, newBounds) -> {
             // Applicera exakta mått från ImageView till överlappspanelen
@@ -93,11 +90,11 @@ public class Gui extends Application {
         menuBar.getMenus().add(fileMenu);
 
         // Knappar för funktioner
-         findPath = new Button("Find Path");
-         showConnection = new Button("Show Connection");
-         newPlace = new Button("New Place");
-         newConnection = new Button("New Connection");
-         changeConnection = new Button("Change Connection");
+        findPath = new Button("Find Path");
+        showConnection = new Button("Show Connection");
+        newPlace = new Button("New Place");
+        newConnection = new Button("New Connection");
+        changeConnection = new Button("Change Connection");
 
         disableAllButtons();
 
@@ -465,12 +462,12 @@ public class Gui extends Application {
         primaryStage.setScene(scene);
         primaryStage.setTitle("PathFinder");
         primaryStage.show();
-        extraHeight =  (primaryStage.getHeight() - primaryStage.getScene().getHeight()) + holdTop.getHeight();
+        extraHeight = (primaryStage.getHeight() - primaryStage.getScene().getHeight()) + holdTop.getHeight();
 
 
         //4.1.1 New Map
         newMap.setOnAction(event -> {
-            if (confirmDiscardChanges()){ //Frågetecken gällande dessa. Senaste ändringen bara. Bör kontrolleras
+            if (confirmDiscardChanges()) { //Frågetecken gällande dessa. Senaste ändringen bara. Bör kontrolleras
                 graph = new ListGraph<>();
                 placeMap.clear();
                 overlayPane.getChildren().clear();
@@ -486,7 +483,7 @@ public class Gui extends Application {
             File selectedFile = fileChooser.showOpenDialog(primaryStage);
             if (selectedFile != null) {
 
-                
+
                 imageFilePath = selectedFile.getAbsolutePath();
                 Image image = new Image(selectedFile.toURI().toString());
                 imageView.setImage(image);
@@ -548,6 +545,13 @@ public class Gui extends Application {
                     bw.newLine();
                     bw.write(createSaveStringOfGraphs()); // Spara platsinformation
                     bw.newLine();
+
+                    List<String> connections = getConnectionsAsStrings();
+                    for(String connection : connections) {
+                        bw.write(connection);
+                        bw.newLine();
+                    }
+
                     hasUnsavedChanges = false;
                 } catch (Exception e) {
                     showError("Failed to save graph: " + e.getMessage());
@@ -580,7 +584,7 @@ public class Gui extends Application {
     }
 
     //Ny metod för att disablea alla knappar från start
-    private void disableAllButtons(){
+    private void disableAllButtons() {
         disableButton(newPlace);
         disableButton(newConnection);
         disableButton(showConnection);
@@ -589,7 +593,7 @@ public class Gui extends Application {
     }
 
     //Ny metod för att enablea efter map har öppnats , se punkt 4.2
-    private void enableAllButtons(){
+    private void enableAllButtons() {
         enableButton(newPlace);
         enableButton(newConnection);
         enableButton(showConnection);
@@ -647,15 +651,46 @@ public class Gui extends Application {
     private void loadGraphFromFile(File file) {
         try (Scanner scanner = new Scanner(file)) {
             String imagePath = scanner.nextLine();
+            imageFilePath = imagePath;
             Image image = new Image(new File(imagePath).toURI().toString());
             imageView.setImage(image);
             imageView.setPreserveRatio(true);
+
             String graphString = scanner.nextLine();
+
+            graph = new ListGraph<>();
+            placeMap.clear();
+            overlayPane.getChildren().clear();
+            selectedCircles.clear();
+
             addPlacesFromFile(graphString);
+
+            while (scanner.hasNextLine()){
+                String connectionString = scanner.nextLine();
+                String [] parts = connectionString.split(";");
+                if(parts.length == 4){
+                    String from = parts[0];
+                    String to = parts[1];
+                    String name = parts[2];
+                    int weight = Integer.parseInt(parts[3]);
+
+                    if (graph.getEdgeBetween(from,to) == null){
+                        graph.connect(from,to,name,weight);
+
+                        Place fromPlace = placeMap.get(from);
+                        Place toPlace = placeMap.get(to);
+                        if (fromPlace != null && toPlace != null) {
+                            drawConnection(fromPlace,toPlace);
+                        }
+                    }
+                }
+            }
+
+
+
             // Ändra inte bildens storlek, behåll ursprungliga dimensioner
             imageView.setFitWidth(0);
             imageView.setFitHeight(0);
-
             pane.getChildren().setAll(imageView, overlayPane);
             pane.setPrefSize(image.getWidth(), image.getHeight());
 
@@ -679,8 +714,6 @@ public class Gui extends Application {
         alert.getButtonTypes().setAll(okButton, cancelButton);
         return alert.showAndWait().orElse(cancelButton) == okButton;
     }
-
-
 
 
     // Visar felmeddelande i dialogruta
@@ -730,17 +763,17 @@ public class Gui extends Application {
         overlayPane.getChildren().add(0, line);
     }
 
-    private void addPlacesFromFile(String stringOfPlaces){
+    private void addPlacesFromFile(String stringOfPlaces) {
         List<Place> placesToAdd = new ArrayList<>();
         String[] values = stringOfPlaces.split(";");
         String city;
-        for (int i = 0; i < values.length; i+=3){
+        for (int i = 0; i < values.length; i += 3) {
             city = values[i];
-            double x = Double.parseDouble(values[i+1]);
-            double y = Double.parseDouble(values[i+2]);
+            double x = Double.parseDouble(values[i + 1]);
+            double y = Double.parseDouble(values[i + 2]);
             placesToAdd.add(new Place(city, x, y));
         }
-        for (Place p : placesToAdd){
+        for (Place p : placesToAdd) {
             graph.add(p.getName());
             placeMap.put(p.getName(), p);
             drawPlace(p);
@@ -748,7 +781,7 @@ public class Gui extends Application {
 
     }
 
-    private String createSaveStringOfGraphs(){
+    private String createSaveStringOfGraphs() {
         StringBuilder sb = new StringBuilder();
 
         for (Map.Entry<String, Place> entry : placeMap.entrySet()) {
@@ -761,6 +794,23 @@ public class Gui extends Application {
         }
         return sb.toString();
     }
+
+
+     private List<String> getConnectionsAsStrings() {
+        List<String> connections = new ArrayList<>();
+        for(String nodeName : graph.getNodes()){
+            Collection<Edge<String>> edges = graph.getEdgesFrom(nodeName);
+
+            for(Edge<String> edge : edges) {
+                String destinationNode = edge.getDestination();
+                String connectionsString = nodeName + ";" + destinationNode + ";" +
+                        edge.getName() + ";" + edge.getWeight() ;
+                connections.add(connectionsString);
+            }
+        }
+        return connections;
+     }
+
 
 
 
