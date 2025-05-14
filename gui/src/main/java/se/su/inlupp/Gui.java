@@ -41,10 +41,10 @@ import java.util.Scanner;
 public class Gui extends Application {
 
     //Datastruktur för att hantera grafen och kartvyn
-    Graph<String> graph = new ListGraph<>();
-    Pane overlayPane = new Pane(); // Transparent lager över bilden för koordinater
-    ImageView imageView = new ImageView();
-    StackPane pane = new StackPane(imageView, overlayPane);
+    private Graph<String> graph = new ListGraph<>();
+    private Pane overlayPane = new Pane(); // Transparent lager över bilden för koordinater
+    private ImageView imageView = new ImageView();
+    private StackPane pane = new StackPane(imageView, overlayPane);
     private List<Circle> selectedCircles = new ArrayList<>();
 
     private boolean hasUnsavedChanges = false;
@@ -52,11 +52,11 @@ public class Gui extends Application {
     private Map<String, Place> placeMap = new HashMap<>();
     private double extraHeight;
 
-    Button findPath;
-    Button showConnection;
-    Button newPlace;
-    Button newConnection;
-    Button changeConnection;
+    private Button findPath;
+    private Button showConnection;
+    private Button newPlace;
+    private Button newConnection;
+    private Button changeConnection;
 
 
     public void start(Stage primaryStage) {
@@ -137,7 +137,7 @@ public class Gui extends Application {
             });
         });
 
-        //4.2.3 Funktionalitet för Ny Förbindelse-knappen
+        //4.2.3 newConnection-knappen
         newConnection.setOnAction(event -> {
             // Inaktivera knapp när den klickas
             disableButton(newConnection);
@@ -158,19 +158,19 @@ public class Gui extends Application {
                 return;
             }
 
-            // Create dialog for connection details
+            //dialog för connectionrutan
             javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
             dialog.setTitle("Connection");
             dialog.setHeaderText("Connection from " + node1 + " to " + node2);
 
-            // Create dialog pane layout
+            // dialogpanelayout
             javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
 
-            // Create button types with OK on the left and Cancel on the right (like in image 2)
+
             ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
             ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
 
-            // Add button types in the order OK, Cancel (this is key to match image 2)
+            // Lägg till knapptyp i ordn OK, Cancel
             dialogPane.getButtonTypes().addAll(okButton, cancelButton);
 
             javafx.scene.layout.GridPane grid = new javafx.scene.layout.GridPane();
@@ -188,17 +188,17 @@ public class Gui extends Application {
 
             dialogPane.setContent(grid);
 
-            // Show dialog and process result
+            // Visa dialog och resultat
             Place place1 = places[0];
             Place place2 = places[1];
             dialog.showAndWait().ifPresent(response -> {
-                if (response == okButton) { // Note: Using okButton instead of ButtonType.OK
+                if (response == okButton) {
                     String name = nameField.getText().trim();
                     String timeText = timeField.getText().trim();
 
                     // Validate input
                     if (name.isEmpty()) {
-                        showError("Name cannot be empty.");
+                        showError("Name can not be empty.");
                         return;
                     }
 
@@ -210,14 +210,14 @@ public class Gui extends Application {
                             return;
                         }
                     } catch (NumberFormatException e) {
-                        showError("Time must consist of digits only.");
+                        showError("Time must consist of only numbers.");
                         return;
                     }
 
-                    // Create the connection in the graph
+                    // connecta graf
                     graph.connect(node1, node2, name, time);
 
-                    // Draw the connection on the map
+                    // rita connection på kartan
                     drawConnection(place1, place2);
 
                     // Set unsaved changes flag
@@ -252,7 +252,7 @@ public class Gui extends Application {
             String node1 = places[0].getName();
             String node2 = places[1].getName();
 
-            // Kontrollera om en förbindelse finns mellan de valda platserna
+            // Kontrollera om connection finns mellan de valda platserna
             Edge<String> edge = graph.getEdgeBetween(node1, node2);
             if (edge == null) {
                 showError("There is no connection between the selected places.");
@@ -260,7 +260,7 @@ public class Gui extends Application {
                 return;
             }
 
-            // Create a dialog to show connection information
+            // visa information om connection
             javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
             dialog.setTitle("Connection");
             dialog.setHeaderText("Connection from " + node1 + " to " + node2);
@@ -440,7 +440,7 @@ public class Gui extends Application {
             // Visa dialogrutan
             dialog.showAndWait();
 
-            // Återställ val efter att ha visat väginformation
+            // Återställ cirklar efter visat väginformation
             resetSelectedCircles();
 
             // Återaktivera knappen
@@ -465,7 +465,7 @@ public class Gui extends Application {
 
         //4.1.1 New Map
         newMap.setOnAction(event -> {
-            if (confirmDiscardChanges()){ //Frågetecken gällande dessa. Senaste ändringen bara. Bör kontro
+            if (confirmDiscardChanges()){ //Frågetecken gällande dessa. Senaste ändringen bara. Bör kontrolleras
                 graph = new ListGraph<>();
                 placeMap.clear();
                 overlayPane.getChildren().clear();
@@ -500,7 +500,7 @@ public class Gui extends Application {
             }
         });
 
-        //4.1.5 Exit function
+        //4.1.5 Exit
         exit.setOnAction(event -> {
             if (!confirmDiscardChanges()) return;
             primaryStage.close();
@@ -562,7 +562,7 @@ public class Gui extends Application {
         });
     }
 
-    // Aktiverar en knapp och återställer muspekaren
+    // Aktiverar en knapp, återställer muspekaren
     private void enableButton(Button buttonName) {
         buttonName.setDisable(false);
         overlayPane.setCursor(Cursor.DEFAULT);
@@ -592,7 +592,7 @@ public class Gui extends Application {
         enableButton(findPath);
     }
 
-    // Ny metod för att kontrollera om två platser är valda
+    //metod för att kontrollera om två platser är valda
     private boolean checkTwoPlacesSelected() {
         if (selectedCircles.size() != 2) {
             showError("Two places must be selected!");
@@ -601,7 +601,7 @@ public class Gui extends Application {
         return true;
     }
 
-    // Ny metod för att hämta de två valda platserna
+    //metod för att hämta de två valda platserna
     private Place[] getSelectedPlaces() {
         if (!checkTwoPlacesSelected()) {
             return null;
@@ -630,7 +630,7 @@ public class Gui extends Application {
         return new Place[]{place1, place2};
     }
 
-    // Ny metod för att återställa valda cirklar
+    //metod för att återställa valda cirklar
     private void resetSelectedCircles() {
         for (Circle circle : selectedCircles) {
             circle.setFill(Color.BLUE);
@@ -687,7 +687,7 @@ public class Gui extends Application {
         alert.showAndWait();
     }
 
-    // Ritar en plats (cirkel) på kartan med tooltip och klickfunktion
+    // Ritar en plats dvs cirkel på kartan med tooltip och klickfunktion
     private void drawPlace(Place place) {
         Circle circle = new Circle(place.getX(), place.getY(), 8);
         circle.setFill(Color.BLUE);
@@ -716,7 +716,7 @@ public class Gui extends Application {
         overlayPane.getChildren().add(circle); // Lägg till cirkeln i vyn
     }
 
-    // Ritar en förbindelse (linje) mellan två platser
+    // Ritar linjen mellan två platser
     private void drawConnection(Place from, Place to) {
         Line line = new Line(from.getX(), from.getY(), to.getX(), to.getY());
         line.setStroke(Color.BLACK);
