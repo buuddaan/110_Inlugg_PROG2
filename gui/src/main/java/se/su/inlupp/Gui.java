@@ -128,6 +128,7 @@ public class Gui extends Application {
                         hasUnsavedChanges = true;
                     } else {
                         showError("Name is empty or already used.");
+                        enableButton(newPlace);
                     }
                 });
 
@@ -196,10 +197,11 @@ public class Gui extends Application {
                     String name = nameField.getText().trim();
                     String timeText = timeField.getText().trim();
 
-                    // Validate input
                     if (name.isEmpty()) {
                         showError("Name can not be empty.");
+                        enableButton(newConnection);
                         return;
+
                     }
 
                     int time;
@@ -207,10 +209,13 @@ public class Gui extends Application {
                         time = Integer.parseInt(timeText);
                         if (time < 0) {
                             showError("Time must be a positive number.");
+                            enableButton(newConnection);
                             return;
+
                         }
                     } catch (NumberFormatException e) {
                         showError("Time must consist of only numbers.");
+                        enableButton(newConnection);
                         return;
                     }
 
