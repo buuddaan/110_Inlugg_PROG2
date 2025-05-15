@@ -103,6 +103,7 @@ public class Gui extends Application {
             // För rätt muspekare
             overlayPane.setCursor(Cursor.CROSSHAIR);
             // Inaktivera knappen
+            enableAllButtons(); //Pga buggen, hittar vi bättre lösning?
             disableButton(newPlace);
 
             // Ställ in händelsehanterare för musklick
@@ -137,8 +138,10 @@ public class Gui extends Application {
 
         //4.2.3 newConnection-knappen
         newConnection.setOnAction(event -> {
+            enableAllButtons(); //Pga buggen, hittar vi bättre lösning?
             // Inaktivera knapp när den klickas
             disableButton(newConnection);
+
 
             Place[] places = getSelectedPlaces();
             if (places == null) {
@@ -242,6 +245,7 @@ public class Gui extends Application {
 
         //4.2.4 ShowConnection
         showConnection.setOnAction(event -> {
+            enableAllButtons(); //Pga buggen, hittar vi bättre lösning?
             // Inaktivera knapp när den klickas
             disableButton(showConnection);
 
@@ -302,6 +306,7 @@ public class Gui extends Application {
 
         //4.2.5 Funktionalitet för Ändra Förbindelse-knappen
         changeConnection.setOnAction(event -> {
+            enableAllButtons(); //Pga buggen, hittar vi bättre lösning?
             // Inaktivera knapp när den klickas
             disableButton(changeConnection);
 
@@ -381,6 +386,7 @@ public class Gui extends Application {
 
         //4.2.6 Funktionalitet för Hitta Väg-knappen
         findPath.setOnAction(event -> {
+            enableAllButtons(); //Pga buggen, hittar vi bättre lösning?
             // Inaktivera knapp när den klickas
             disableButton(findPath);
 
@@ -454,11 +460,8 @@ public class Gui extends Application {
         hbox.setAlignment(Pos.CENTER);
 
 
-
-
         Region spacer1 = new Region();
         spacer1.setMinHeight(10);
-
         Region spacer2 = new Region();
         spacer2.setMinHeight(10);
 
@@ -820,7 +823,6 @@ public class Gui extends Application {
         }
         return connections;
      }
-
 
 
 
