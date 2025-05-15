@@ -29,12 +29,12 @@ import javafx.stage.Stage;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.WritableImage;
 import javafx.scene.SnapshotParameters;
-
 import javax.imageio.ImageIO;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.*;
+//TODO Frågor till handledning: Bör vi ändra alla paket till * och spara info om vardera - vad är bäst?
 
 public class Gui extends Application {
 
@@ -103,7 +103,6 @@ public class Gui extends Application {
             // För rätt muspekare
             overlayPane.setCursor(Cursor.CROSSHAIR);
             // Inaktivera knappen
-            enableAllButtons(); //Pga buggen, hittar vi bättre lösning?
             disableButton(newPlace);
 
             // Ställ in händelsehanterare för musklick
@@ -126,7 +125,6 @@ public class Gui extends Application {
                         hasUnsavedChanges = true;
                     } else {
                         showError("Name is empty or already used.");
-                        enableButton(newPlace);
                     }
                 });
 
@@ -138,10 +136,8 @@ public class Gui extends Application {
 
         //4.2.3 newConnection-knappen
         newConnection.setOnAction(event -> {
-            enableAllButtons(); //Pga buggen, hittar vi bättre lösning?
             // Inaktivera knapp när den klickas
             disableButton(newConnection);
-
 
             Place[] places = getSelectedPlaces();
             if (places == null) {
@@ -155,7 +151,6 @@ public class Gui extends Application {
             // Kontrollera om förbindelse redan finns
             if (graph.getEdgeBetween(node1, node2) != null) {
                 showError("There already is a connection between the selected places.");
-                enableButton(newConnection); // Återaktivera knappen
                 return;
             }
 
@@ -199,7 +194,6 @@ public class Gui extends Application {
 
                     if (name.isEmpty()) {
                         showError("Name can not be empty.");
-                        enableButton(newConnection);
                         return;
 
                     }
@@ -209,13 +203,11 @@ public class Gui extends Application {
                         time = Integer.parseInt(timeText);
                         if (time < 0) {
                             showError("Time must be a positive number.");
-                            enableButton(newConnection);
                             return;
 
                         }
                     } catch (NumberFormatException e) {
                         showError("Time must consist of only numbers.");
-                        enableButton(newConnection);
                         return;
                     }
 
@@ -245,7 +237,6 @@ public class Gui extends Application {
 
         //4.2.4 ShowConnection
         showConnection.setOnAction(event -> {
-            enableAllButtons(); //Pga buggen, hittar vi bättre lösning?
             // Inaktivera knapp när den klickas
             disableButton(showConnection);
 
@@ -262,7 +253,6 @@ public class Gui extends Application {
             Edge<String> edge = graph.getEdgeBetween(node1, node2);
             if (edge == null) {
                 showError("There is no connection between the selected places.");
-                enableButton(showConnection); // Återaktivera knappen
                 return;
             }
 
@@ -306,7 +296,6 @@ public class Gui extends Application {
 
         //4.2.5 Funktionalitet för Ändra Förbindelse-knappen
         changeConnection.setOnAction(event -> {
-            enableAllButtons(); //Pga buggen, hittar vi bättre lösning?
             // Inaktivera knapp när den klickas
             disableButton(changeConnection);
 
@@ -323,7 +312,6 @@ public class Gui extends Application {
             Edge<String> edge = graph.getEdgeBetween(node1, node2);
             if (edge == null) {
                 showError("There is no connection between the selected places.");
-                enableButton(changeConnection); // Återaktivera knappen
                 return;
             }
 
@@ -386,7 +374,6 @@ public class Gui extends Application {
 
         //4.2.6 Funktionalitet för Hitta Väg-knappen
         findPath.setOnAction(event -> {
-            enableAllButtons(); //Pga buggen, hittar vi bättre lösning?
             // Inaktivera knapp när den klickas
             disableButton(findPath);
 
@@ -404,11 +391,10 @@ public class Gui extends Application {
 
             if (path == null) {
                 showError("There is no path between the selected places.");
-                enableButton(findPath); // Återaktivera knappen
                 return;
             }
 
-            // Create a dialog to show the path information
+            // Visa dialogruta med connection-info
             javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
             dialog.setTitle("Message");
             dialog.setHeaderText("The Path from " + node1 + " to " + node2 + ":");
@@ -433,14 +419,14 @@ public class Gui extends Application {
 
                 totalTime += time;
 
-                Label segment = new Label("to " + nextPlace + " by " + connectionName + " takes " + time);
+                Label segment = new Label(currentPlace + " to " + nextPlace + " by " + connectionName + " takes " + time + " hours");
                 content.getChildren().add(segment);
 
                 currentPlace = nextPlace;
             }
 
-            // Add total time
-            Label totalLabel = new Label("Total " + totalTime);
+            // Visa total restid
+            Label totalLabel = new Label("The total travel time is " + totalTime + " hours.");
             content.getChildren().add(totalLabel);
 
             dialogPane.setContent(content);
@@ -518,7 +504,7 @@ public class Gui extends Application {
             }
         });
 
-        //4.1.2 Open
+        //4.1.2 OpenMap
         openMap.setOnAction(event -> {
             if (!confirmDiscardChanges()) return;
             FileChooser fileChooser = new FileChooser();
@@ -715,10 +701,13 @@ public class Gui extends Application {
     // Visar felmeddelande i dialogruta
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
+        enableAllButtons();
+
         alert.setTitle("Error");
         alert.setHeaderText("An error occurred");
         alert.setContentText(message);
         alert.showAndWait();
+        enableAllButtons();
     }
 
     // Ritar en plats dvs cirkel på kartan med tooltip och klickfunktion
@@ -739,6 +728,7 @@ public class Gui extends Application {
                 } else {
                     // Visa felmeddelande eller ignorera klicket
                     showError("You can not mark more than two places at a time");
+                    //Försvar: Snyggare med tydlighet för användaren. Tekniskt sett händer inget annat än felmeddelande, kreativ frihet osv :D
                 }
             } else {
                 // Avmarkera
