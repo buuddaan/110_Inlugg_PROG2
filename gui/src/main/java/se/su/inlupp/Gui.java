@@ -497,21 +497,9 @@ public class Gui extends Application {
             File selectedFile = fileChooser.showOpenDialog(primaryStage);
             if (selectedFile != null) {
 
-
                 imageFilePath = selectedFile.getAbsolutePath();
                 Image image = new Image(selectedFile.toURI().toString());
-                imageView.setImage(image);
-                imageView.setPreserveRatio(true);
-                imageView.setFitWidth(image.getWidth());
-                imageView.setFitHeight(image.getHeight());
-
-                pane.getChildren().setAll(imageView, overlayPane);
-                pane.setPrefSize(image.getWidth(), image.getHeight());
-                primaryStage.setWidth(image.getWidth());
-                primaryStage.setHeight(image.getHeight() + extraHeight); // Justera för menyer och knappar
-
-               // hasUnsavedChanges = true;
-
+                stageToImageSize(image, primaryStage);
 
                 enableAllButtons();
             }
@@ -700,12 +688,7 @@ public class Gui extends Application {
                     }
                 }
             }
-
-            // Ändra inte bildens storlek, behåll ursprungliga dimensioner
-            imageView.setFitWidth(0);
-            imageView.setFitHeight(0);
-            pane.getChildren().setAll(imageView, overlayPane);
-            pane.setPrefSize(image.getWidth(), image.getHeight());
+            stageToImageSize(image, (Stage) pane.getScene().getWindow());
 
             hasUnsavedChanges = false;
 
@@ -823,7 +806,19 @@ public class Gui extends Application {
         }
         return connections;
      }
+    // Gemensam metod för att visa karta i fönstret och justera storlek
+    private void stageToImageSize(Image image, Stage stage) {
+        imageView.setImage(image);
+        imageView.setPreserveRatio(true);
+        imageView.setFitWidth(image.getWidth());
+        imageView.setFitHeight(image.getHeight());
 
+        pane.getChildren().setAll(imageView, overlayPane);
+        pane.setPrefSize(image.getWidth(), image.getHeight());
+
+        stage.setWidth(image.getWidth());
+        stage.setHeight(image.getHeight() + extraHeight);
+    }
 
 
     public static void main(String[] args) {
