@@ -453,9 +453,20 @@ public class Gui extends Application {
         hbox.getChildren().addAll(findPath, showConnection, newPlace, newConnection, changeConnection);
         hbox.setAlignment(Pos.CENTER);
 
-        VBox holdTop = new VBox(menuBar, hbox);
+
+
+
+        Region spacer1 = new Region();
+        spacer1.setMinHeight(10);
+
+        Region spacer2 = new Region();
+        spacer2.setMinHeight(10);
+
+        VBox holdTop = new VBox(menuBar, spacer1, hbox, spacer2);
+
         root.setTop(holdTop);
         root.setCenter(pane);
+
 
         // Skapa scen och visa fönstret
         Scene scene = new Scene(root, 640, 480);
@@ -496,7 +507,8 @@ public class Gui extends Application {
                 primaryStage.setWidth(image.getWidth());
                 primaryStage.setHeight(image.getHeight() + extraHeight); // Justera för menyer och knappar
 
-                hasUnsavedChanges = true;
+               // hasUnsavedChanges = true;
+
 
                 enableAllButtons();
             }
@@ -541,7 +553,7 @@ public class Gui extends Application {
             File selectedFile = fileChooser.showSaveDialog(primaryStage);
             if (selectedFile != null) {
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(selectedFile))) {
-                    bw.write(imageFilePath); // Spara bildfilen
+                    bw.write("file:"+ imageFilePath); // Spara bildfilen
                     bw.newLine();
                     bw.write(createSaveStringOfGraphs()); // Spara platsinformation
                     bw.newLine();
@@ -562,7 +574,7 @@ public class Gui extends Application {
         //4.1.4 Save Image
         saveImage.setOnAction(e -> {
             WritableImage image = pane.snapshot(new SnapshotParameters(), null);
-            File outputFile = new File("capture.png");
+            File outputFile = new File("../capture.png");
             try {
                 ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", outputFile);
             } catch (Exception ex) {
@@ -651,8 +663,8 @@ public class Gui extends Application {
     private void loadGraphFromFile(File file) {
         try (Scanner scanner = new Scanner(file)) {
             String imagePath = scanner.nextLine();
-            imageFilePath = imagePath;
-            Image image = new Image(new File(imagePath).toURI().toString());
+            String imageFilePath = imagePath.substring(imagePath.indexOf(":")+1);
+            Image image = new Image(new File(imageFilePath).toURI().toString());
             imageView.setImage(image);
             imageView.setPreserveRatio(true);
 
@@ -686,8 +698,6 @@ public class Gui extends Application {
                 }
             }
 
-
-
             // Ändra inte bildens storlek, behåll ursprungliga dimensioner
             imageView.setFitWidth(0);
             imageView.setFitHeight(0);
@@ -706,10 +716,10 @@ public class Gui extends Application {
         if (!hasUnsavedChanges) return true;
 
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Unsaved Changes");
+        alert.setTitle("Warning");
         alert.setHeaderText("There are unsaved changes.");
-        alert.setContentText("Do you want to discard changes?");
-        ButtonType okButton = new ButtonType("OK");
+        alert.setContentText("Do you want to discard and continue anyway?");
+        ButtonType okButton = new ButtonType("OK, Discard changes");
         ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
         alert.getButtonTypes().setAll(okButton, cancelButton);
         return alert.showAndWait().orElse(cancelButton) == okButton;

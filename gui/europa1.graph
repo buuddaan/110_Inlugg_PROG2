@@ -1,0 +1,12 @@
+/Users/mathildawallen/110_Inlugg_PROG2/gui/europa.gif
+Rom;391.0;571.5;oslo;401.0;217.5;Dublin;180.0;310.5;Helsingfors;539.0;220.5;berlin;410.0;370.5;Lisabon;57.0;556.5
+Rom;Lisabon;tåg;2
+Rom;Dublin;båt;23
+oslo;berlin;båt;32
+oslo;Dublin;flyg;6
+Dublin;Rom;båt;23
+Dublin;oslo;flyg;6
+Helsingfors;berlin;flyg;22
+berlin;Helsingfors;flyg;22
+berlin;oslo;båt;32
+Lisabon;Rom;tåg;2
