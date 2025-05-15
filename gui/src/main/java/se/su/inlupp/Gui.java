@@ -34,7 +34,13 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.*;
-//TODO Frågor till handledning: Bör vi ändra alla paket till * och spara info om vardera - vad är bäst?
+//TODO Fråga till handledning: Bör vi ändra alla paket till * och spara info om vardera - vad är bäst?
+//TODO Fråga till handledning: Bör knappar varje knapp vara en egen inre klass med en egen EventHandler eller är våra Lambda-uttryck okej?
+
+//TODO Ordna struktur på kod, eventuellt bryt ut i mer hjälpmetoder. Kan vi förkorta vår start()?
+
+
+
 
 public class Gui extends Application {
 
@@ -372,7 +378,8 @@ public class Gui extends Application {
             });
         });
 
-        //4.2.6 Funktionalitet för Hitta Väg-knappen
+        //4.2.6 Funktionalitet för Hitta Väg-knappen.
+        // TODO: Skriva ut om vi har snabbaste eller kortaste vägen. Något att försvara ListGraph.getPath(). Del 1 inlämning
         findPath.setOnAction(event -> {
             // Inaktivera knapp när den klickas
             disableButton(findPath);
