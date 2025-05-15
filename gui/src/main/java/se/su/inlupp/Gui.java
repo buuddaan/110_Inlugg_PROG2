@@ -29,12 +29,18 @@ import javafx.stage.Stage;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.WritableImage;
 import javafx.scene.SnapshotParameters;
-
 import javax.imageio.ImageIO;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.*;
+//TODO Fråga till handledning: Bör vi ändra alla paket till * och spara info om vardera - vad är bäst?
+//TODO Fråga till handledning: Bör knappar varje knapp vara en egen inre klass med en egen EventHandler eller är våra Lambda-uttryck okej?
+
+//TODO Ordna struktur på kod, eventuellt bryt ut i mer hjälpmetoder. Kan vi förkorta vår start()?
+
+
+
 
 public class Gui extends Application {
 
@@ -125,7 +131,6 @@ public class Gui extends Application {
                         hasUnsavedChanges = true;
                     } else {
                         showError("Name is empty or already used.");
-                        enableButton(newPlace);
                     }
                 });
 
@@ -152,7 +157,6 @@ public class Gui extends Application {
             // Kontrollera om förbindelse redan finns
             if (graph.getEdgeBetween(node1, node2) != null) {
                 showError("There already is a connection between the selected places.");
-                enableButton(newConnection); // Återaktivera knappen
                 return;
             }
 
@@ -196,7 +200,6 @@ public class Gui extends Application {
 
                     if (name.isEmpty()) {
                         showError("Name can not be empty.");
-                        enableButton(newConnection);
                         return;
 
                     }
@@ -206,13 +209,11 @@ public class Gui extends Application {
                         time = Integer.parseInt(timeText);
                         if (time < 0) {
                             showError("Time must be a positive number.");
-                            enableButton(newConnection);
                             return;
 
                         }
                     } catch (NumberFormatException e) {
                         showError("Time must consist of only numbers.");
-                        enableButton(newConnection);
                         return;
                     }
 
@@ -258,7 +259,6 @@ public class Gui extends Application {
             Edge<String> edge = graph.getEdgeBetween(node1, node2);
             if (edge == null) {
                 showError("There is no connection between the selected places.");
-                enableButton(showConnection); // Återaktivera knappen
                 return;
             }
 
@@ -318,7 +318,6 @@ public class Gui extends Application {
             Edge<String> edge = graph.getEdgeBetween(node1, node2);
             if (edge == null) {
                 showError("There is no connection between the selected places.");
-                enableButton(changeConnection); // Återaktivera knappen
                 return;
             }
 
@@ -379,7 +378,8 @@ public class Gui extends Application {
             });
         });
 
-        //4.2.6 Funktionalitet för Hitta Väg-knappen
+        //4.2.6 Funktionalitet för Hitta Väg-knappen.
+        // TODO: Skriva ut om vi har snabbaste eller kortaste vägen. Något att försvara ListGraph.getPath(). Del 1 inlämning
         findPath.setOnAction(event -> {
             // Inaktivera knapp när den klickas
             disableButton(findPath);
@@ -398,11 +398,10 @@ public class Gui extends Application {
 
             if (path == null) {
                 showError("There is no path between the selected places.");
-                enableButton(findPath); // Återaktivera knappen
                 return;
             }
 
-            // Create a dialog to show the path information
+            // Visa dialogruta med connection-info
             javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
             dialog.setTitle("Message");
             dialog.setHeaderText("The Path from " + node1 + " to " + node2 + ":");
@@ -427,14 +426,14 @@ public class Gui extends Application {
 
                 totalTime += time;
 
-                Label segment = new Label("to " + nextPlace + " by " + connectionName + " takes " + time);
+                Label segment = new Label(currentPlace + " to " + nextPlace + " by " + connectionName + " takes " + time + " hours");
                 content.getChildren().add(segment);
 
                 currentPlace = nextPlace;
             }
 
-            // Add total time
-            Label totalLabel = new Label("Total " + totalTime);
+            // Visa total restid
+            Label totalLabel = new Label("The total travel time is " + totalTime + " hours.");
             content.getChildren().add(totalLabel);
 
             dialogPane.setContent(content);
@@ -454,11 +453,8 @@ public class Gui extends Application {
         hbox.setAlignment(Pos.CENTER);
 
 
-
-
         Region spacer1 = new Region();
         spacer1.setMinHeight(10);
-
         Region spacer2 = new Region();
         spacer2.setMinHeight(10);
 
@@ -494,21 +490,9 @@ public class Gui extends Application {
             File selectedFile = fileChooser.showOpenDialog(primaryStage);
             if (selectedFile != null) {
 
-
                 imageFilePath = selectedFile.getAbsolutePath();
                 Image image = new Image(selectedFile.toURI().toString());
-                imageView.setImage(image);
-                imageView.setPreserveRatio(true);
-                imageView.setFitWidth(image.getWidth());
-                imageView.setFitHeight(image.getHeight());
-
-                pane.getChildren().setAll(imageView, overlayPane);
-                pane.setPrefSize(image.getWidth(), image.getHeight());
-                primaryStage.setWidth(image.getWidth());
-                primaryStage.setHeight(image.getHeight() + extraHeight); // Justera för menyer och knappar
-
-               // hasUnsavedChanges = true;
-
+                stageToImageSize(image, primaryStage);
 
                 enableAllButtons();
             }
@@ -527,7 +511,7 @@ public class Gui extends Application {
             }
         });
 
-        //4.1.2 Open
+        //4.1.2 OpenMap
         openMap.setOnAction(event -> {
             if (!confirmDiscardChanges()) return;
             FileChooser fileChooser = new FileChooser();
@@ -697,12 +681,7 @@ public class Gui extends Application {
                     }
                 }
             }
-
-            // Ändra inte bildens storlek, behåll ursprungliga dimensioner
-            imageView.setFitWidth(0);
-            imageView.setFitHeight(0);
-            pane.getChildren().setAll(imageView, overlayPane);
-            pane.setPrefSize(image.getWidth(), image.getHeight());
+            stageToImageSize(image, (Stage) pane.getScene().getWindow());
 
             hasUnsavedChanges = false;
 
@@ -729,10 +708,13 @@ public class Gui extends Application {
     // Visar felmeddelande i dialogruta
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
+        enableAllButtons();
+
         alert.setTitle("Error");
         alert.setHeaderText("An error occurred");
         alert.setContentText(message);
         alert.showAndWait();
+        enableAllButtons();
     }
 
     // Ritar en plats dvs cirkel på kartan med tooltip och klickfunktion
@@ -753,6 +735,7 @@ public class Gui extends Application {
                 } else {
                     // Visa felmeddelande eller ignorera klicket
                     showError("You can not mark more than two places at a time");
+                    //Försvar: Snyggare med tydlighet för användaren. Tekniskt sett händer inget annat än felmeddelande, kreativ frihet osv :D
                 }
             } else {
                 // Avmarkera
@@ -820,8 +803,19 @@ public class Gui extends Application {
         }
         return connections;
      }
+    // Gemensam metod för att visa karta i fönstret och justera storlek
+    private void stageToImageSize(Image image, Stage stage) {
+        imageView.setImage(image);
+        imageView.setPreserveRatio(true);
+        imageView.setFitWidth(image.getWidth());
+        imageView.setFitHeight(image.getHeight());
 
+        pane.getChildren().setAll(imageView, overlayPane);
+        pane.setPrefSize(image.getWidth(), image.getHeight());
 
+        stage.setWidth(image.getWidth());
+        stage.setHeight(image.getHeight() + extraHeight);
+    }
 
 
     public static void main(String[] args) {
