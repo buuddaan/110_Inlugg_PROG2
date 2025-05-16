@@ -65,7 +65,6 @@ public class Gui extends Application {
 
     public void start(Stage primaryStage) {
 
-
         // Grundstruktur för fönstret
         BorderPane root = new BorderPane();
         pane.setStyle("-fx-background-color: lightgray;");
@@ -104,7 +103,137 @@ public class Gui extends Application {
 
         disableAllButtons();
 
-        //4.2.1 Funktionalitet för Ny Plats-knappen
+        // Knappar
+        //4.2.6 Funktionalitet för Hitta Väg-knappen.
+        // TODO: Skriva ut om vi har snabbaste eller kortaste vägen. Något att försvara ListGraph.getPath(). Del 1 inlämning
+        findPath.setOnAction(event -> {
+            // Inaktivera knapp när den klickas
+            disableButton(findPath);
+
+            Place[] places = getSelectedPlaces();
+            if (places == null) {
+                enableButton(findPath); // Återaktivera om validering misslyckas
+                return;
+            }
+
+            String node1 = places[0].getName();
+            String node2 = places[1].getName();
+
+            // Hitta en väg mellan de valda platserna
+            List<Edge<String>> path = graph.getPath(node1, node2);
+
+            if (path == null) {
+                showError("There is no path between the selected places.");
+                return;
+            }
+
+            // Visa dialogruta med connection-info
+            javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
+            dialog.setTitle("Message");
+            dialog.setHeaderText("The Path from " + node1 + " to " + node2 + ":");
+
+            // Create the dialog content
+            javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
+            ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+            dialogPane.getButtonTypes().add(okButton);
+
+            // Create content to display the path
+            VBox content = new VBox(5);
+            content.setPadding(new Insets(10));
+
+            int totalTime = 0;
+            String currentPlace = node1;
+
+            // For each edge in the path
+            for (Edge<String> edge : path) {
+                String nextPlace = edge.getDestination();
+                String connectionName = edge.getName();
+                int time = edge.getWeight();
+
+                totalTime += time;
+
+                Label segment = new Label(currentPlace + " to " + nextPlace + " by " + connectionName + " takes " + time + " hours");
+                content.getChildren().add(segment);
+
+                currentPlace = nextPlace;
+            }
+
+            // Visa total restid
+            Label totalLabel = new Label("The total travel time is " + totalTime + " hours.");
+            content.getChildren().add(totalLabel);
+
+            dialogPane.setContent(content);
+
+            // Visa dialogrutan
+            dialog.showAndWait();
+
+            // Återställ cirklar efter visat väginformation
+            resetSelectedCircles();
+
+            // Återaktivera knappen
+            enableButton(findPath);
+        });
+
+        //4.2.4 ShowConnection
+        showConnection.setOnAction(event -> {
+            // Inaktivera knapp när den klickas
+            disableButton(showConnection);
+
+            Place[] places = getSelectedPlaces();
+            if (places == null) {
+                enableButton(showConnection); // Återaktivera
+                return;
+            }
+
+            String node1 = places[0].getName();
+            String node2 = places[1].getName();
+
+            // Kontrollera om connection finns mellan de valda platserna
+            Edge<String> edge = graph.getEdgeBetween(node1, node2);
+            if (edge == null) {
+                showError("There is no connection between the selected places.");
+                return;
+            }
+
+            // visa information om connection
+            javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
+            dialog.setTitle("Connection");
+            dialog.setHeaderText("Connection from " + node1 + " to " + node2);
+
+            // Create the dialog content layout
+            javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
+            ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+            dialogPane.getButtonTypes().add(okButton);
+
+            GridPane grid = new GridPane();
+            grid.setHgap(10.0);
+            grid.setVgap(10.0);
+            grid.setPadding(new Insets(20, 150, 10, 10));
+
+            // Create non-editable fields
+            TextField nameField = new TextField(edge.getName());
+            nameField.setEditable(false);
+            TextField timeField = new TextField(Integer.toString(edge.getWeight()));
+            timeField.setEditable(false);
+
+            grid.add(new Label("Name:"), 0, 0);
+            grid.add(nameField, 1, 0);
+            grid.add(new Label("Time:"), 0, 1);
+            grid.add(timeField, 1, 1);
+
+            dialogPane.setContent(grid);
+
+            // Visa dialogrutan
+            dialog.showAndWait();
+
+            // Återställ val efter att ha visat förbindelseinformation
+            resetSelectedCircles();
+
+            // Återaktivera knappen
+            enableButton(showConnection);
+        });
+
+        //4.2.1 Funktionalitet för New Map-knappen
         newPlace.setOnAction(event -> {
             // För rätt muspekare
             overlayPane.setCursor(Cursor.CROSSHAIR);
@@ -241,65 +370,6 @@ public class Gui extends Application {
             });
         }); //slut på newConnction
 
-        //4.2.4 ShowConnection
-        showConnection.setOnAction(event -> {
-            // Inaktivera knapp när den klickas
-            disableButton(showConnection);
-
-            Place[] places = getSelectedPlaces();
-            if (places == null) {
-                enableButton(showConnection); // Återaktivera
-                return;
-            }
-
-            String node1 = places[0].getName();
-            String node2 = places[1].getName();
-
-            // Kontrollera om connection finns mellan de valda platserna
-            Edge<String> edge = graph.getEdgeBetween(node1, node2);
-            if (edge == null) {
-                showError("There is no connection between the selected places.");
-                return;
-            }
-
-            // visa information om connection
-            javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
-            dialog.setTitle("Connection");
-            dialog.setHeaderText("Connection from " + node1 + " to " + node2);
-
-            // Create the dialog content layout
-            javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
-            ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
-            dialogPane.getButtonTypes().add(okButton);
-
-            GridPane grid = new GridPane();
-            grid.setHgap(10.0);
-            grid.setVgap(10.0);
-            grid.setPadding(new Insets(20, 150, 10, 10));
-
-            // Create non-editable fields
-            TextField nameField = new TextField(edge.getName());
-            nameField.setEditable(false);
-            TextField timeField = new TextField(Integer.toString(edge.getWeight()));
-            timeField.setEditable(false);
-
-            grid.add(new Label("Name:"), 0, 0);
-            grid.add(nameField, 1, 0);
-            grid.add(new Label("Time:"), 0, 1);
-            grid.add(timeField, 1, 1);
-
-            dialogPane.setContent(grid);
-
-            // Visa dialogrutan
-            dialog.showAndWait();
-
-            // Återställ val efter att ha visat förbindelseinformation
-            resetSelectedCircles();
-
-            // Återaktivera knappen
-            enableButton(showConnection);
-        });
-
         //4.2.5 Funktionalitet för Ändra Förbindelse-knappen
         changeConnection.setOnAction(event -> {
             // Inaktivera knapp när den klickas
@@ -378,100 +448,6 @@ public class Gui extends Application {
             });
         });
 
-        //4.2.6 Funktionalitet för Hitta Väg-knappen.
-        // TODO: Skriva ut om vi har snabbaste eller kortaste vägen. Något att försvara ListGraph.getPath(). Del 1 inlämning
-        findPath.setOnAction(event -> {
-            // Inaktivera knapp när den klickas
-            disableButton(findPath);
-
-            Place[] places = getSelectedPlaces();
-            if (places == null) {
-                enableButton(findPath); // Återaktivera om validering misslyckas
-                return;
-            }
-
-            String node1 = places[0].getName();
-            String node2 = places[1].getName();
-
-            // Hitta en väg mellan de valda platserna
-            List<Edge<String>> path = graph.getPath(node1, node2);
-
-            if (path == null) {
-                showError("There is no path between the selected places.");
-                return;
-            }
-
-            // Visa dialogruta med connection-info
-            javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
-            dialog.setTitle("Message");
-            dialog.setHeaderText("The Path from " + node1 + " to " + node2 + ":");
-
-            // Create the dialog content
-            javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
-            ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
-            dialogPane.getButtonTypes().add(okButton);
-
-            // Create content to display the path
-            VBox content = new VBox(5);
-            content.setPadding(new Insets(10));
-
-            int totalTime = 0;
-            String currentPlace = node1;
-
-            // For each edge in the path
-            for (Edge<String> edge : path) {
-                String nextPlace = edge.getDestination();
-                String connectionName = edge.getName();
-                int time = edge.getWeight();
-
-                totalTime += time;
-
-                Label segment = new Label(currentPlace + " to " + nextPlace + " by " + connectionName + " takes " + time + " hours");
-                content.getChildren().add(segment);
-
-                currentPlace = nextPlace;
-            }
-
-            // Visa total restid
-            Label totalLabel = new Label("The total travel time is " + totalTime + " hours.");
-            content.getChildren().add(totalLabel);
-
-            dialogPane.setContent(content);
-
-            // Visa dialogrutan
-            dialog.showAndWait();
-
-            // Återställ cirklar efter visat väginformation
-            resetSelectedCircles();
-
-            // Återaktivera knappen
-            enableButton(findPath);
-        });
-
-        HBox hbox = new HBox(10);
-        hbox.getChildren().addAll(findPath, showConnection, newPlace, newConnection, changeConnection);
-        hbox.setAlignment(Pos.CENTER);
-
-
-        Region spacer1 = new Region();
-        spacer1.setMinHeight(10);
-        Region spacer2 = new Region();
-        spacer2.setMinHeight(10);
-
-        VBox holdTop = new VBox(menuBar, spacer1, hbox, spacer2);
-
-        root.setTop(holdTop);
-        root.setCenter(pane);
-
-
-        // Skapa scen och visa fönstret
-        Scene scene = new Scene(root, 640, 480);
-        primaryStage.setScene(scene);
-        primaryStage.setTitle("PathFinder");
-        primaryStage.show();
-        extraHeight = (primaryStage.getHeight() - primaryStage.getScene().getHeight()) + holdTop.getHeight();
-
-
         //4.1.1 New Map
         newMap.setOnAction(event -> {
             if (confirmDiscardChanges()) { //Frågetecken gällande dessa. Senaste ändringen bara. Bör kontrolleras
@@ -495,19 +471,6 @@ public class Gui extends Application {
                 stageToImageSize(image, primaryStage);
 
                 enableAllButtons();
-            }
-        });
-
-        //4.1.5 Exit
-        exit.setOnAction(event -> {
-            if (!confirmDiscardChanges()) return;
-            primaryStage.close();
-        });
-
-        // Stängning via exit-knappen
-        primaryStage.setOnCloseRequest(event -> {
-            if (!confirmDiscardChanges()) {
-                event.consume(); // Avbryt stängning
             }
         });
 
@@ -565,6 +528,42 @@ public class Gui extends Application {
                 showError("Failed to save image: " + ex.getMessage());
             }
         });
+
+        //4.1.5 Exit
+        exit.setOnAction(event -> {
+            if (!confirmDiscardChanges()) return;
+            primaryStage.close();
+        });
+
+        // Stängning via exit-knappen
+        primaryStage.setOnCloseRequest(event -> {
+            if (!confirmDiscardChanges()) {
+                event.consume(); // Avbryt stängning
+            }
+        });
+
+        HBox hbox = new HBox(10);
+        hbox.getChildren().addAll(findPath, showConnection, newPlace, newConnection, changeConnection);
+        hbox.setAlignment(Pos.CENTER);
+
+
+        Region spacer1 = new Region();
+        spacer1.setMinHeight(10);
+        Region spacer2 = new Region();
+        spacer2.setMinHeight(10);
+
+        VBox holdTop = new VBox(menuBar, spacer1, hbox, spacer2);
+
+        root.setTop(holdTop);
+        root.setCenter(pane);
+
+        // Skapa scen och visa fönstret
+        Scene scene = new Scene(root, 640, 480);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("PathFinder");
+        primaryStage.show();
+        extraHeight = (primaryStage.getHeight() - primaryStage.getScene().getHeight()) + holdTop.getHeight();
+
     }
 
     // Aktiverar en knapp, återställer muspekaren
