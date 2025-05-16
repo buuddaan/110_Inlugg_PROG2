@@ -6,11 +6,16 @@
 
 package se.su.inlupp;
 
+//FX stuff
 import javafx.application.Application;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
@@ -24,25 +29,33 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.image.WritableImage;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.image.WritableImage;
-import javafx.scene.SnapshotParameters;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
+
+//För filhanteringen + IO
 import javax.imageio.ImageIO;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.util.*;
-//TODO Fråga till handledning: Bör vi ändra alla paket till * och spara info om vardera - vad är bäst?
-//TODO Ordna struktur på kod, eventuellt bryt ut i mer hjälpmetoder. Kan vi förkorta vår start()?
+import java.util.Scanner;
 
+//Util stuff
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Gui extends Application {
 
@@ -68,7 +81,7 @@ public class Gui extends Application {
     private Menu fileMenu;
     private MenuItem newMap, openMap, saveMap, saveImage, exit;
 
-    @Override
+    @Override //För att överskrida en metod i application i java fx
     public void start(Stage primaryStage) {
         initializeUI();
         setupMenuBar();
@@ -90,9 +103,7 @@ public class Gui extends Application {
         });
     }
 
-    /**
-     * Initialiserar grundkomponenter för användargränssnittet
-     */
+    //fixar fönstret
     private void initializeUI() {
         // En lyssnare som explicit ändrar överlappspanelens storlek
         imageView.boundsInParentProperty().addListener((obs, oldBounds, newBounds) -> {
@@ -107,9 +118,7 @@ public class Gui extends Application {
         overlayPane.setPickOnBounds(false);
     }
 
-    /**
-     * Konfigurerar menyn och dess funktionalitet
-     */
+    //meny och funktionalitet
     private void setupMenuBar() {
         menuBar = new MenuBar();
         fileMenu = new Menu("File");
@@ -130,13 +139,11 @@ public class Gui extends Application {
         saveMap.setOnAction(new SaveMapListener());
         saveImage.setOnAction(new SaveImageListener());
         exit.setOnAction(new ExitListener());
-    }
 
-    /**
-     * Konfigurerar knappar och deras funktionalitet
-     */
+
+    }
+    // fixa knapparna o deras funktionalitet i en metod)
     private void setupButtons() {
-        // Knappar för funktioner
         findPath = new Button("Find Path");
         showConnection = new Button("Show Connection");
         newPlace = new Button("New Place");
@@ -153,9 +160,7 @@ public class Gui extends Application {
         changeConnection.setOnAction(new ChangeConnectionListener());
     }
 
-    /**
-     * Skapar rotlayouten för applikationen
-     */
+    //root layot fixas här
     private BorderPane createRootPane() {
         BorderPane root = new BorderPane();
 
@@ -176,19 +181,13 @@ public class Gui extends Application {
         return root;
     }
 
-    /**
-     * Konfigurerar layouten och storleken på scenen
-     */
+    //layouten för primary stage
     private void setupLayout(Stage primaryStage) {
         // Konfigurerar scenen baserat på tillgänglig information
         // Storleken justeras senare när en bild laddas
     }
 
-    // ------ Inre klasser för händelsehantering ------
-
-    /**
-     * Inre klass för att hantera Find Path-knappens funktionalitet
-     */
+    //findPath knapp
     private class FindPathListener implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
@@ -212,24 +211,24 @@ public class Gui extends Application {
                 return;
             }
 
-            // Visa dialogruta med connection-info
+            // Visa dialogruta me connection-info
             javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
             dialog.setTitle("Message");
             dialog.setHeaderText("The Path from " + node1 + " to " + node2 + ":");
 
-            // Create the dialog content
+            // Skapa dialogcontenta
             javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
             ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
             dialogPane.getButtonTypes().add(okButton);
 
-            // Create content to display the path
+            // visa pathcontentan
             VBox content = new VBox(5);
             content.setPadding(new Insets(10));
 
             int totalTime = 0;
             String currentPlace = node1;
 
-            // For each edge in the path
+            // hitta varje edge i en path
             for (Edge<String> edge : path) {
                 String nextPlace = edge.getDestination();
                 String connectionName = edge.getName();
@@ -260,9 +259,7 @@ public class Gui extends Application {
         }
     }
 
-    /**
-     * Inre klass för att hantera Show Connection-knappens funktionalitet
-     */
+    // showConnection
     private class ShowConnectionListener implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
@@ -278,7 +275,7 @@ public class Gui extends Application {
             String node1 = places[0].getName();
             String node2 = places[1].getName();
 
-            // Kontrollera om connection finns mellan de valda platserna
+            // Kontrollera om connection finns mellan valda platser
             Edge<String> edge = graph.getEdgeBetween(node1, node2);
             if (edge == null) {
                 showError("There is no connection between the selected places.");
@@ -290,7 +287,7 @@ public class Gui extends Application {
             dialog.setTitle("Connection");
             dialog.setHeaderText("Connection from " + node1 + " to " + node2);
 
-            // Create the dialog content layout
+            // skapa dialogcontentan
             javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
             ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
             dialogPane.getButtonTypes().add(okButton);
@@ -300,7 +297,7 @@ public class Gui extends Application {
             grid.setVgap(10.0);
             grid.setPadding(new Insets(20, 150, 10, 10));
 
-            // Create non-editable fields
+            // skapa icke-edtibara tetfält
             TextField nameField = new TextField(edge.getName());
             nameField.setEditable(false);
             TextField timeField = new TextField(Integer.toString(edge.getWeight()));
@@ -324,9 +321,7 @@ public class Gui extends Application {
         }
     }
 
-    /**
-     * Inre klass för att hantera New Place-knappens funktionalitet
-     */
+    // New Place
     private class NewPlaceListener implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
@@ -364,9 +359,7 @@ public class Gui extends Application {
         }
     }
 
-    /**
-     * Inre klass för att hantera New Connection-knappens funktionalitet
-     */
+
     private class NewConnectionListener implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
@@ -467,9 +460,7 @@ public class Gui extends Application {
         }
     }
 
-    /**
-     * Inre klass för att hantera Change Connection-knappens funktionalitet
-     */
+
     private class ChangeConnectionListener implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
@@ -520,10 +511,10 @@ public class Gui extends Application {
 
             dialogPane.setContent(grid);
 
-            // Show the dialog and process the result
+            // visa dialog och ge resultst
             dialog.showAndWait().ifPresent(response -> {
                 if (response == okButton) {
-                    // Validate and save the new time
+                    // spara new tid
                     String timeText = timeField.getText().trim();
 
                     try {
@@ -550,9 +541,7 @@ public class Gui extends Application {
         }
     }
 
-    /**
-     * Inre klass för att hantera New Map-menyvalets funktionalitet
-     */
+
     private class NewMapListener implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
@@ -581,9 +570,7 @@ public class Gui extends Application {
         }
     }
 
-    /**
-     * Inre klass för att hantera Open Map-menyvalets funktionalitet
-     */
+
     private class OpenMapListener implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
@@ -603,9 +590,7 @@ public class Gui extends Application {
         }
     }
 
-    /**
-     * Inre klass för att hantera Save Map-menyvalets funktionalitet
-     */
+
     private class SaveMapListener implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
@@ -636,9 +621,7 @@ public class Gui extends Application {
         }
     }
 
-    /**
-     * Inre klass för att hantera Save Image-menyvalets funktionalitet
-     */
+
     private class SaveImageListener implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
@@ -653,9 +636,7 @@ public class Gui extends Application {
         }
     }
 
-    /**
-     * Inre klass för att hantera Exit-menyvalets funktionalitet
-     */
+
     private class ExitListener implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
@@ -666,25 +647,19 @@ public class Gui extends Application {
 
     // ------ Hjälpmetoder ------
 
-    /**
-     * Aktiverar en knapp, återställer muspekaren
-     */
+
     private void enableButton(Button buttonName) {
         buttonName.setDisable(false);
         overlayPane.setCursor(Cursor.DEFAULT);
         overlayPane.setOnMouseClicked(null); // Rensar eventhanterare
     }
 
-    /**
-     * Inaktiverar en knapp
-     */
+
     private void disableButton(Button buttonName) {
         buttonName.setDisable(true);
     }
 
-    /**
-     * Ny metod för att disablea alla knappar från start
-     */
+
     private void disableAllButtons() {
         disableButton(newPlace);
         disableButton(newConnection);
@@ -693,9 +668,7 @@ public class Gui extends Application {
         disableButton(findPath);
     }
 
-    /**
-     * Ny metod för att enablea efter map har öppnats , se punkt 4.2
-     */
+
     private void enableAllButtons() {
         enableButton(newPlace);
         enableButton(newConnection);
@@ -704,9 +677,7 @@ public class Gui extends Application {
         enableButton(findPath);
     }
 
-    /**
-     * Metod för att kontrollera om två platser är valda
-     */
+
     private boolean checkTwoPlacesSelected() {
         if (selectedCircles.size() != 2) {
             showError("Two places must be selected!");
@@ -715,9 +686,7 @@ public class Gui extends Application {
         return true;
     }
 
-    /**
-     * Metod för att hämta de två valda platserna
-     */
+
     private Place[] getSelectedPlaces() {
         if (!checkTwoPlacesSelected()) {
             return null;
@@ -746,9 +715,7 @@ public class Gui extends Application {
         return new Place[]{place1, place2};
     }
 
-    /**
-     * Metod för att återställa valda cirklar
-     */
+
     private void resetSelectedCircles() {
         for (Circle circle : selectedCircles) {
             circle.setFill(Color.BLUE);
@@ -756,9 +723,7 @@ public class Gui extends Application {
         selectedCircles.clear();
     }
 
-    /**
-     * Laddar graf från fil
-     */
+
     private void loadGraphFromFile(File file) {
         try (Scanner scanner = new Scanner(file)) {
             String imagePath = scanner.nextLine();
@@ -805,9 +770,6 @@ public class Gui extends Application {
         }
     }
 
-    /**
-     * Bekräftar om osparade ändringar ska kastas
-     */
     private boolean confirmDiscardChanges() {
         if (!hasUnsavedChanges) return true;
 
@@ -821,9 +783,6 @@ public class Gui extends Application {
         return alert.showAndWait().orElse(cancelButton) == okButton;
     }
 
-    /**
-     * Visar felmeddelande i dialogruta
-     */
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         enableAllButtons();
@@ -835,9 +794,6 @@ public class Gui extends Application {
         enableAllButtons();
     }
 
-    /**
-     * Ritar en plats dvs cirkel på kartan med tooltip och klickfunktion
-     */
     private void drawPlace(Place place) {
         Circle circle = new Circle(place.getX(), place.getY(), 8);
         circle.setFill(Color.BLUE);
@@ -851,9 +807,9 @@ public class Gui extends Application {
         overlayPane.getChildren().add(circle); // Lägg till cirkeln i vyn
     }
 
-    /**
-     * Inre klass för att hantera klick på platser
-     */
+
+    // Inre klass för att hantera klick på platser
+
     private class PlaceClickListener implements EventHandler<javafx.scene.input.MouseEvent> {
         private Circle circle;
 
@@ -881,9 +837,7 @@ public class Gui extends Application {
         }
     }
 
-    /**
-     * Ritar linjen mellan två platser
-     */
+
     private void drawConnection(Place from, Place to) {
         Line line = new Line(from.getX(), from.getY(), to.getX(), to.getY());
         line.setStroke(Color.BLACK);
@@ -892,9 +846,7 @@ public class Gui extends Application {
         overlayPane.getChildren().add(0, line);
     }
 
-    /**
-     * Lägger till platser från en sträng-representation i filen
-     */
+
     private void addPlacesFromFile(String stringOfPlaces) {
         List<Place> placesToAdd = new ArrayList<>();
         String[] values = stringOfPlaces.split(";");
@@ -912,9 +864,7 @@ public class Gui extends Application {
         }
     }
 
-    /**
-     * Skapar en semikolon-separerad sträng för att spara grafen
-     */
+
     private String createSaveStringOfGraphs() {
         StringBuilder sb = new StringBuilder();
 
@@ -929,9 +879,6 @@ public class Gui extends Application {
         return sb.toString();
     }
 
-    /**
-     * Hämtar förbindelser som strängar för att sparas till fil
-     */
     private List<String> getConnectionsAsStrings() {
         List<String> connections = new ArrayList<>();
         for(String nodeName : graph.getNodes()){
@@ -947,9 +894,6 @@ public class Gui extends Application {
         return connections;
     }
 
-    /**
-     * Gemensam metod för att visa karta i fönstret och justera storlek
-     */
     private void stageToImageSize(Image image, Stage stage) {
         imageView.setImage(image);
         imageView.setPreserveRatio(true);
@@ -967,3 +911,4 @@ public class Gui extends Application {
         launch(args);
     }
 }
+

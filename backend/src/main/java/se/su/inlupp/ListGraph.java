@@ -6,8 +6,19 @@
 
 package se.su.inlupp;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Queue;
+import java.util.Set;
 
-import java.util.*;
+
 
 
 public class ListGraph<T> implements Graph<T> {
@@ -23,7 +34,8 @@ public class ListGraph<T> implements Graph<T> {
     @Override
     public void connect(T node1, T node2, String name, int weight) { //node = place, edge = connection, nodeedge = en plats alla connections
         checkIfNodesExists(node1, node2);
-        checkIfWeightIsValid(weight);
+
+        
         checkIfNoExistingEdge(node1, node2);
         //Använd denna för att skapa
 
