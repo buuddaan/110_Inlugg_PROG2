@@ -1,3 +1,9 @@
+// PROG2 VT2025, Inlämningsuppgift del 2
+// Grupp 110
+// Elvira Fröjd eljo2851
+// Mathilda Wallen mawa6612
+// Matilda Fahle mafa2209
+
 package se.su.inlupp;
 
 public class Place {

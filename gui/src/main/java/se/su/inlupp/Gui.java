@@ -1,3 +1,9 @@
+// PROG2 VT2025, Inlämningsuppgift del 2
+// Grupp 110
+// Elvira Fröjd eljo2851
+// Mathilda Wallen mawa6612
+// Matilda Fahle mafa2209
+
 package se.su.inlupp;
 
 // Importer för JavaFX och IO
@@ -38,8 +44,6 @@ import java.util.*;
 //TODO Fråga till handledning: Bör knappar varje knapp vara en egen inre klass med en egen EventHandler eller är våra Lambda-uttryck okej?
 
 //TODO Ordna struktur på kod, eventuellt bryt ut i mer hjälpmetoder. Kan vi förkorta vår start()?
-
-
 
 
 public class Gui extends Application {
@@ -93,7 +97,7 @@ public class Gui extends Application {
 
         fileMenu.getItems().addAll(newMap, openMap, saveMap, saveImage, new SeparatorMenuItem(), exit);
         menuBar.getMenus().add(fileMenu);
-
+/* Tillfälligt utkommenterad för att testa hbox metod
         // Knappar för funktioner
         findPath = new Button("Find Path");
         showConnection = new Button("Show Connection");
@@ -102,10 +106,13 @@ public class Gui extends Application {
         changeConnection = new Button("Change Connection");
 
         disableAllButtons();
+*/
+        HBox hbox = setupButtons();
 
         // Knappar
         //4.2.6 Funktionalitet för Hitta Väg-knappen.
         // TODO: Skriva ut om vi har snabbaste eller kortaste vägen. Något att försvara ListGraph.getPath(). Del 1 inlämning
+        // BFS kortaste vägen
         findPath.setOnAction(event -> {
             // Inaktivera knapp när den klickas
             disableButton(findPath);
@@ -541,11 +548,11 @@ public class Gui extends Application {
                 event.consume(); // Avbryt stängning
             }
         });
-
+/* Tillfälligt utkommenterad
         HBox hbox = new HBox(10);
         hbox.getChildren().addAll(findPath, showConnection, newPlace, newConnection, changeConnection);
         hbox.setAlignment(Pos.CENTER);
-
+*/
 
         Region spacer1 = new Region();
         spacer1.setMinHeight(10);
@@ -802,6 +809,28 @@ public class Gui extends Application {
         }
         return connections;
      }
+
+
+     // Hjälpmetod för att skapa och placera alla knappar i en HBox
+     private HBox setupButtons() {
+         // Skapa knappar
+         findPath = new Button("Find Path");
+         showConnection = new Button("Show Connection");
+         newPlace = new Button("New Place");
+         newConnection = new Button("New Connection");
+         changeConnection = new Button("Change Connection");
+
+         // Inaktivera alla knappar initialt (enligt 4.2 i instruktionerna)
+         disableAllButtons();
+
+         // Lägg knapparna i en HBox med avstånd och centrering
+         HBox hbox = new HBox(10); // 10 pixlar mellanrum
+         hbox.getChildren().addAll(findPath, showConnection, newPlace, newConnection, changeConnection);
+         hbox.setAlignment(Pos.CENTER);
+
+         return hbox;
+     }
+
     // Gemensam metod för att visa karta i fönstret och justera storlek
     private void stageToImageSize(Image image, Stage stage) {
         imageView.setImage(image);
