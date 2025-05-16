@@ -6,34 +6,39 @@ import java.util.*;
 
 public class ListGraph<T> implements Graph<T> {
 
-    private Map<T, Set<Edge<T>>> nodes = new HashMap<>(); // T = typparameter, ex String. Nyckel T är nod i grafen
+    // nodes är en Map där varje nod (T) pekar på en mängd (Set) av Edge<T> – alltså alla utgående kanter (förbindelser) från den noden
+    private Map<T, Set<Edge<T>>> nodes = new HashMap<>(); // T = typparameter (generisk), ex String. Nyckel T är nod i grafen
 
-
+    // Tar emot en node och stoppar in i grafen
     @Override
     public void add(T node) {
-        nodes.putIfAbsent(node, new HashSet<>());
+        nodes.putIfAbsent(node, new HashSet<>()); // Om frånvarande, lägg till nod.
     }
 
     @Override
-    public void connect(T node1, T node2, String name, int weight) { //node = place, edge = connection, nodeedge = en plats alla connections
+    public void connect(T node1, T node2, String name, int weight) { //node = place, edge = connection, nodeEdge = en plats alla connections
         checkIfNodesExists(node1, node2);
         checkIfWeightIsValid(weight);
         checkIfNoExistingEdge(node1, node2);
-        //Använd denna för att skapa
 
+        //Lägger till noder i båda riktningar med samma namn och vikt :D
+        // Ser till att conections blir oriktad
         nodes.get(node1).add(new NodeEdge<>(node2, name, weight));
         nodes.get(node2).add(new NodeEdge<>(node1, name, weight));
-        //Lägger till noder i båda riktningar med samma namn och vikt :D
+
     }
 
+    // Tar emot två noder och ett heltal, förbindelsernas vikt.
     @Override
     public void setConnectionWeight(T node1, T node2, int weight) {
         checkIfWeightIsValid(weight);
         checkIfNodesExists(node1, node2);
 
+        // Kollar att det finns en kant mellan noderna
         if (getEdgeBetween(node1, node2) == null) {
-            throw new NoSuchElementException();
+            throw new NoSuchElementException(); // Om det inte finns - undantag
         }
+        // Hitta och uppdatera vikten i båda riktningarna (oriktad)
         for (Edge<T> edge : nodes.get(node1)) {
             if (edge.getDestination().equals(node2)) {
                 edge.setWeight(weight);
@@ -48,20 +53,23 @@ public class ListGraph<T> implements Graph<T> {
         }
     }
 
+    // Skapa en kopia av mängden innehållande noderna
     @Override
     public Set<T> getNodes() {
-        return new HashSet<>(nodes.keySet()); // kopia av noderna
+        return new HashSet<>(nodes.keySet());
     }
 
+    // tar en nod och returnerar en kopia av samling av alla kanter som leder från denna nod.
     @Override
     public Collection<Edge<T>> getEdgesFrom(T node) {
-        checkIfNodesExists(node);
+        checkIfNodesExists(node); // om saknas får vi undantag NoSuchElementEX... Separat metod :D
         return new HashSet<>(nodes.get(node));
     }
 
+    // Tar emot två noder och returnerar kanten mellan noderna.
     @Override
     public Edge<T> getEdgeBetween(T node1, T node2) {
-        checkIfNodesExists(node1, node2);
+        checkIfNodesExists(node1, node2); // om saknas får vi undantag NoSuchElementEX...
 
         for (Edge<T> edge : nodes.get(node1)) {
             if (edge.getDestination().equals(node2)) {
@@ -71,6 +79,7 @@ public class ListGraph<T> implements Graph<T> {
         return null;
     }
 
+    // tar emot två noder och tar bort kanten mellan dem.
     @Override
     public void disconnect(T node1, T node2) {
         checkIfNodesExists(node1, node2);
@@ -80,26 +89,30 @@ public class ListGraph<T> implements Graph<T> {
             // Vi valde att inte skapa en ny metod för detta undantag då argumenten är annorlunda i disconnect metoden. :)
         }
 
-        // Ta bort kant från node1 till node2
+        // Ta bort kant från node1 till node2 (två för oriktad)
         nodes.get(node1).removeIf(edgeInCollection -> edgeInCollection.getDestination().equals(node2));
         // Ta bort kant från node2 till node1
         nodes.get(node2).removeIf(edgeInCollection -> edgeInCollection.getDestination().equals(node1));
 
     }
 
+    // ta emot en nod och tar bort från grafen + alla kanter
     @Override
     public void remove(T node) {
         checkIfNodesExists(node);
 
-        Iterator<Map.Entry<T, Set<Edge<T>>>> nodeIterator = nodes.entrySet().iterator(); //Valde Map.Entry för att kunna iterera över både värden + nycklar samtidigt
+        Iterator<Map.Entry<T, Set<Edge<T>>>> nodeIterator = nodes.entrySet().iterator(); //Valde Map.Entry för att kunna iterera över både värden/kanter + nycklar(noder) samtidigt
+
+        // lopar igenom varje nod i grafen
         while (nodeIterator.hasNext()) {
             Map.Entry<T, Set<Edge<T>>> entry = nodeIterator.next();
-            T currentNode = entry.getKey(); //Hämtar ut nyckeln från nästa nod?
+            T currentNode = entry.getKey(); //Hämtar ut noden(nyckeln i HashMap) från det aktuella Map.entry-objetet och det läggs i currentNode.
 
             if (!currentNode.equals(node)) { //Hoppar över noden som vi fått in i vår metod, ska inte tas bort än!
                 Set<Edge<T>> edges = entry.getValue(); //hämtar alla kanter från aktuell nod
                 Iterator<Edge<T>> edgeIterator = edges.iterator(); //skapar iterator för att säkert kunna ta bort nod under iteration
 
+                // loopar igenom alla kanter. om en kant leder till noden som ska bort -> ta bort den kanten
                 while (edgeIterator.hasNext()) {
                     Edge<T> edge = edgeIterator.next();
                     if (edge.getDestination().equals(node)) {
@@ -108,9 +121,10 @@ public class ListGraph<T> implements Graph<T> {
                 }
             }
         }
-        nodes.remove(node);
+        nodes.remove(node); //när alla kanter är borta, ta bort noden
     }
 
+    // tar emot två noder och returnerar true om väg mellan finns. Om någon av noderna inte finns ska de bli false
     @Override
     public boolean pathExists(T from, T to) {
         if (!nodes.containsKey(from) || !nodes.containsKey(to)) {return false;}
@@ -118,8 +132,9 @@ public class ListGraph<T> implements Graph<T> {
         return depthFirstSearch(from, to, visited);
     }
 
-    private boolean depthFirstSearch(T current, T goal, Set<T> visited) { //ny hjälpmetod för djupet först sökning
-        if (current.equals(goal)) {
+    //ny hjälpmetod för djupet först sökning
+    private boolean depthFirstSearch(T current, T goal, Set<T> visited) {
+        if (current.equals(goal)) { // om vårt nuvarande plats om mål plats är samma har vi hittat direkt
             return true;
         }
 
@@ -136,6 +151,7 @@ public class ListGraph<T> implements Graph<T> {
         return false;
     }
 
+    // tar
     @Override
     public List<Edge<T>> getPath(T from, T to) {
         checkIfNodesExists(from, to);
@@ -146,7 +162,7 @@ public class ListGraph<T> implements Graph<T> {
         }
 
         // Map för hur man hittar varje node
-        Map<T, T> predecessor = new HashMap<>();
+        Map<T, T> previousNode = new HashMap<>();
 
         // Använd BFS för den kortaste vägen fram
         Queue<T> queue = new LinkedList<>();
@@ -164,7 +180,7 @@ public class ListGraph<T> implements Graph<T> {
 
                 if (!visited.contains(neighbor)) {
                     visited.add(neighbor);
-                    predecessor.put(neighbor, current);
+                    previousNode.put(neighbor, current);
                     queue.add(neighbor);
 
                     // om vi hittat rätt väg, break.
@@ -177,7 +193,7 @@ public class ListGraph<T> implements Graph<T> {
         }
 
         // om vi inte hittat rätt
-        if (!predecessor.containsKey(to)) {
+        if (!previousNode.containsKey(to)) {
             return null;
         }
 
@@ -186,7 +202,7 @@ public class ListGraph<T> implements Graph<T> {
         T current = to;
 
         while (!current.equals(from)) {
-            T prev = predecessor.get(current);
+            T prev = previousNode.get(current);
             path.add(0, getEdgeBetween(prev, current));
             current = prev;
         }
