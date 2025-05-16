@@ -1,12 +1,21 @@
+// PROG2 VT2025, Inlämningsuppgift del 2
+// Grupp 110
+// Elvira Fröjd eljo2851
+// Mathilda Wallen mawa6612
+// Matilda Fahle mafa2209
+
 package se.su.inlupp;
 
-// Importer för JavaFX och IO
-
+//FX stuff
 import javafx.application.Application;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
@@ -20,27 +29,33 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.image.WritableImage;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.image.WritableImage;
-import javafx.scene.SnapshotParameters;
+
+//För filhanteringen + IO
 import javax.imageio.ImageIO;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.util.*;
-//TODO Fråga till handledning: Bör vi ändra alla paket till * och spara info om vardera - vad är bäst?
-//TODO Fråga till handledning: Bör knappar varje knapp vara en egen inre klass med en egen EventHandler eller är våra Lambda-uttryck okej?
+import java.util.Scanner;
 
-//TODO Ordna struktur på kod, eventuellt bryt ut i mer hjälpmetoder. Kan vi förkorta vår start()?
-
-
-
+//Util stuff
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Gui extends Application {
 
@@ -62,17 +77,34 @@ public class Gui extends Application {
     private Button newConnection;
     private Button changeConnection;
 
+    private MenuBar menuBar;
+    private Menu fileMenu;
+    private MenuItem newMap, openMap, saveMap, saveImage, exit;
 
+    @Override //För att överskrida en metod i application i java fx
     public void start(Stage primaryStage) {
+        initializeUI();
+        setupMenuBar();
+        setupButtons();
+        setupLayout(primaryStage);
 
-        // Grundstruktur för fönstret
-        BorderPane root = new BorderPane();
-        pane.setStyle("-fx-background-color: lightgray;");
-        //overlayPane.setStyle("-fx-background-color: transparent;"); //Tillbaka till transparent
-        overlayPane.setStyle("-fx-background-color: transparent;");
-        overlayPane.setPickOnBounds(false);
+        // Skapa scen och visa fönstret
+        Scene scene = new Scene(createRootPane(), 640, 480);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("PathFinder");
+        primaryStage.show();
+        extraHeight = (primaryStage.getHeight() - primaryStage.getScene().getHeight()) + menuBar.getHeight() + 30; // För spacer och knappar
 
+        // Stängning via exit-knappen
+        primaryStage.setOnCloseRequest(event -> {
+            if (!confirmDiscardChanges()) {
+                event.consume(); // Avbryt stängning
+            }
+        });
+    }
 
+    //fixar fönstret
+    private void initializeUI() {
         // En lyssnare som explicit ändrar överlappspanelens storlek
         imageView.boundsInParentProperty().addListener((obs, oldBounds, newBounds) -> {
             // Applicera exakta mått från ImageView till överlappspanelen
@@ -80,21 +112,38 @@ public class Gui extends Application {
             overlayPane.setMaxHeight(newBounds.getHeight());
         });
 
-        // Meny för File
-        MenuBar menuBar = new MenuBar();
-        Menu fileMenu = new Menu("File");
+        pane.setStyle("-fx-background-color: lightgray;");
+        //overlayPane.setStyle("-fx-background-color: transparent;"); //Tillbaka till transparent
+        overlayPane.setStyle("-fx-background-color: transparent;");
+        overlayPane.setPickOnBounds(false);
+    }
+
+    //meny och funktionalitet
+    private void setupMenuBar() {
+        menuBar = new MenuBar();
+        fileMenu = new Menu("File");
 
         // Menyval
-        MenuItem newMap = new MenuItem("New Map");
-        MenuItem openMap = new MenuItem("Open Map");
-        MenuItem saveMap = new MenuItem("Save Map");
-        MenuItem saveImage = new MenuItem("Save Image");
-        MenuItem exit = new MenuItem("Exit");
+        newMap = new MenuItem("New Map");
+        openMap = new MenuItem("Open Map");
+        saveMap = new MenuItem("Save Map");
+        saveImage = new MenuItem("Save Image");
+        exit = new MenuItem("Exit");
 
         fileMenu.getItems().addAll(newMap, openMap, saveMap, saveImage, new SeparatorMenuItem(), exit);
         menuBar.getMenus().add(fileMenu);
 
-        // Knappar för funktioner
+        // Sätta upp händelsehanterare för menyobjekt
+        newMap.setOnAction(new NewMapListener());
+        openMap.setOnAction(new OpenMapListener());
+        saveMap.setOnAction(new SaveMapListener());
+        saveImage.setOnAction(new SaveImageListener());
+        exit.setOnAction(new ExitListener());
+
+
+    }
+    // fixa knapparna o deras funktionalitet i en metod)
+    private void setupButtons() {
         findPath = new Button("Find Path");
         showConnection = new Button("Show Connection");
         newPlace = new Button("New Place");
@@ -103,10 +152,45 @@ public class Gui extends Application {
 
         disableAllButtons();
 
-        // Knappar
-        //4.2.6 Funktionalitet för Hitta Väg-knappen.
-        // TODO: Skriva ut om vi har snabbaste eller kortaste vägen. Något att försvara ListGraph.getPath(). Del 1 inlämning
-        findPath.setOnAction(event -> {
+        // Sätta upp händelsehanterare för knappar
+        findPath.setOnAction(new FindPathListener());
+        showConnection.setOnAction(new ShowConnectionListener());
+        newPlace.setOnAction(new NewPlaceListener());
+        newConnection.setOnAction(new NewConnectionListener());
+        changeConnection.setOnAction(new ChangeConnectionListener());
+    }
+
+    //root layot fixas här
+    private BorderPane createRootPane() {
+        BorderPane root = new BorderPane();
+
+        HBox buttonBox = new HBox(10);
+        buttonBox.getChildren().addAll(findPath, showConnection, newPlace, newConnection, changeConnection);
+        buttonBox.setAlignment(Pos.CENTER);
+
+        Region spacer1 = new Region();
+        spacer1.setMinHeight(10);
+        Region spacer2 = new Region();
+        spacer2.setMinHeight(10);
+
+        VBox topSection = new VBox(menuBar, spacer1, buttonBox, spacer2);
+
+        root.setTop(topSection);
+        root.setCenter(pane);
+
+        return root;
+    }
+
+    //layouten för primary stage
+    private void setupLayout(Stage primaryStage) {
+        // Konfigurerar scenen baserat på tillgänglig information
+        // Storleken justeras senare när en bild laddas
+    }
+
+    //findPath knapp
+    private class FindPathListener implements EventHandler<ActionEvent> {
+        @Override
+        public void handle(ActionEvent event) {
             // Inaktivera knapp när den klickas
             disableButton(findPath);
 
@@ -127,24 +211,24 @@ public class Gui extends Application {
                 return;
             }
 
-            // Visa dialogruta med connection-info
+            // Visa dialogruta me connection-info
             javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
             dialog.setTitle("Message");
             dialog.setHeaderText("The Path from " + node1 + " to " + node2 + ":");
 
-            // Create the dialog content
+            // Skapa dialogcontenta
             javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
             ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
             dialogPane.getButtonTypes().add(okButton);
 
-            // Create content to display the path
+            // visa pathcontentan
             VBox content = new VBox(5);
             content.setPadding(new Insets(10));
 
             int totalTime = 0;
             String currentPlace = node1;
 
-            // For each edge in the path
+            // hitta varje edge i en path
             for (Edge<String> edge : path) {
                 String nextPlace = edge.getDestination();
                 String connectionName = edge.getName();
@@ -172,10 +256,13 @@ public class Gui extends Application {
 
             // Återaktivera knappen
             enableButton(findPath);
-        });
+        }
+    }
 
-        //4.2.4 ShowConnection
-        showConnection.setOnAction(event -> {
+    // showConnection
+    private class ShowConnectionListener implements EventHandler<ActionEvent> {
+        @Override
+        public void handle(ActionEvent event) {
             // Inaktivera knapp när den klickas
             disableButton(showConnection);
 
@@ -188,7 +275,7 @@ public class Gui extends Application {
             String node1 = places[0].getName();
             String node2 = places[1].getName();
 
-            // Kontrollera om connection finns mellan de valda platserna
+            // Kontrollera om connection finns mellan valda platser
             Edge<String> edge = graph.getEdgeBetween(node1, node2);
             if (edge == null) {
                 showError("There is no connection between the selected places.");
@@ -200,7 +287,7 @@ public class Gui extends Application {
             dialog.setTitle("Connection");
             dialog.setHeaderText("Connection from " + node1 + " to " + node2);
 
-            // Create the dialog content layout
+            // skapa dialogcontentan
             javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
             ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
             dialogPane.getButtonTypes().add(okButton);
@@ -210,7 +297,7 @@ public class Gui extends Application {
             grid.setVgap(10.0);
             grid.setPadding(new Insets(20, 150, 10, 10));
 
-            // Create non-editable fields
+            // skapa icke-edtibara tetfält
             TextField nameField = new TextField(edge.getName());
             nameField.setEditable(false);
             TextField timeField = new TextField(Integer.toString(edge.getWeight()));
@@ -231,10 +318,13 @@ public class Gui extends Application {
 
             // Återaktivera knappen
             enableButton(showConnection);
-        });
+        }
+    }
 
-        //4.2.1 Funktionalitet för New Map-knappen
-        newPlace.setOnAction(event -> {
+    // New Place
+    private class NewPlaceListener implements EventHandler<ActionEvent> {
+        @Override
+        public void handle(ActionEvent event) {
             // För rätt muspekare
             overlayPane.setCursor(Cursor.CROSSHAIR);
             // Inaktivera knappen
@@ -242,7 +332,6 @@ public class Gui extends Application {
 
             // Ställ in händelsehanterare för musklick
             overlayPane.setOnMouseClicked(e -> {
-
                 javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog();
                 dialog.setTitle("New Place");
                 dialog.setHeaderText("Enter name for the new place");
@@ -263,14 +352,17 @@ public class Gui extends Application {
                     }
                 });
 
-                // Återställer muslyssnaren så att man inte råkar skapa flerapane.setOnMouseClicked(null);
+                // Återställer muslyssnaren så att man inte råkar skapa flera
+                overlayPane.setOnMouseClicked(null);
                 enableButton(newPlace);
-
             });
-        });
+        }
+    }
 
-        //4.2.3 newConnection-knappen
-        newConnection.setOnAction(event -> {
+
+    private class NewConnectionListener implements EventHandler<ActionEvent> {
+        @Override
+        public void handle(ActionEvent event) {
             // Inaktivera knapp när den klickas
             disableButton(newConnection);
 
@@ -296,7 +388,6 @@ public class Gui extends Application {
 
             // dialogpanelayout
             javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
-
 
             ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
             ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
@@ -330,7 +421,6 @@ public class Gui extends Application {
                     if (name.isEmpty()) {
                         showError("Name can not be empty.");
                         return;
-
                     }
 
                     int time;
@@ -339,7 +429,6 @@ public class Gui extends Application {
                         if (time < 0) {
                             showError("Time must be a positive number.");
                             return;
-
                         }
                     } catch (NumberFormatException e) {
                         showError("Time must consist of only numbers.");
@@ -368,10 +457,13 @@ public class Gui extends Application {
                     enableButton(newConnection);
                 }
             });
-        }); //slut på newConnction
+        }
+    }
 
-        //4.2.5 Funktionalitet för Ändra Förbindelse-knappen
-        changeConnection.setOnAction(event -> {
+
+    private class ChangeConnectionListener implements EventHandler<ActionEvent> {
+        @Override
+        public void handle(ActionEvent event) {
             // Inaktivera knapp när den klickas
             disableButton(changeConnection);
 
@@ -419,10 +511,10 @@ public class Gui extends Application {
 
             dialogPane.setContent(grid);
 
-            // Show the dialog and process the result
+            // visa dialog och ge resultst
             dialog.showAndWait().ifPresent(response -> {
                 if (response == okButton) {
-                    // Validate and save the new time
+                    // spara new tid
                     String timeText = timeField.getText().trim();
 
                     try {
@@ -446,16 +538,20 @@ public class Gui extends Application {
                 // Återaktivera knappen
                 enableButton(changeConnection);
             });
-        });
+        }
+    }
 
-        //4.1.1 New Map
-        newMap.setOnAction(event -> {
+
+    private class NewMapListener implements EventHandler<ActionEvent> {
+        @Override
+        public void handle(ActionEvent event) {
             if (confirmDiscardChanges()) { //Frågetecken gällande dessa. Senaste ändringen bara. Bör kontrolleras
                 graph = new ListGraph<>();
                 placeMap.clear();
                 overlayPane.getChildren().clear();
                 selectedCircles.clear();
-
+            } else {
+                return; // Avbryter om användaren inte vill förkasta ändringar
             }
 
             FileChooser fileChooser = new FileChooser();
@@ -463,41 +559,47 @@ public class Gui extends Application {
             fileChooser.getExtensionFilters().addAll(
                     new FileChooser.ExtensionFilter("Image files", "*.png", "*.jpg", "*.jpeg", "*.gif")
             );
-            File selectedFile = fileChooser.showOpenDialog(primaryStage);
+            File selectedFile = fileChooser.showOpenDialog(pane.getScene().getWindow());
             if (selectedFile != null) {
-
                 imageFilePath = selectedFile.getAbsolutePath();
                 Image image = new Image(selectedFile.toURI().toString());
-                stageToImageSize(image, primaryStage);
+                stageToImageSize(image, (Stage) pane.getScene().getWindow());
 
                 enableAllButtons();
             }
-        });
+        }
+    }
 
-        //4.1.2 OpenMap
-        openMap.setOnAction(event -> {
+
+    private class OpenMapListener implements EventHandler<ActionEvent> {
+        @Override
+        public void handle(ActionEvent event) {
             if (!confirmDiscardChanges()) return;
+
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Choose a graph file");
             fileChooser.getExtensionFilters().add(
                     new FileChooser.ExtensionFilter("Graph files", "*.graph")
             );
-            File selectedFile = fileChooser.showOpenDialog(primaryStage);
+            File selectedFile = fileChooser.showOpenDialog(pane.getScene().getWindow());
             if (selectedFile != null) {
                 loadGraphFromFile(selectedFile);
 
                 enableAllButtons();
             }
-        });
+        }
+    }
 
-        //4.1.3 Save Map
-        saveMap.setOnAction(event -> {
+
+    private class SaveMapListener implements EventHandler<ActionEvent> {
+        @Override
+        public void handle(ActionEvent event) {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Save graph");
             fileChooser.getExtensionFilters().add(
                     new FileChooser.ExtensionFilter("Graph files", "*.graph")
             );
-            File selectedFile = fileChooser.showSaveDialog(primaryStage);
+            File selectedFile = fileChooser.showSaveDialog(pane.getScene().getWindow());
             if (selectedFile != null) {
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(selectedFile))) {
                     bw.write("file:"+ imageFilePath); // Spara bildfilen
@@ -516,69 +618,48 @@ public class Gui extends Application {
                     showError("Failed to save graph: " + e.getMessage());
                 }
             }
-        });
+        }
+    }
 
-        //4.1.4 Save Image
-        saveImage.setOnAction(e -> {
+
+    private class SaveImageListener implements EventHandler<ActionEvent> {
+        @Override
+        public void handle(ActionEvent event) {
             WritableImage image = pane.snapshot(new SnapshotParameters(), null);
+            // Korrigerat enligt uppgiftsbeskrivningen 4.1.4 - spara på toppnivå i projektmappen
             File outputFile = new File("../capture.png");
             try {
                 ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", outputFile);
             } catch (Exception ex) {
                 showError("Failed to save image: " + ex.getMessage());
             }
-        });
-
-        //4.1.5 Exit
-        exit.setOnAction(event -> {
-            if (!confirmDiscardChanges()) return;
-            primaryStage.close();
-        });
-
-        // Stängning via exit-knappen
-        primaryStage.setOnCloseRequest(event -> {
-            if (!confirmDiscardChanges()) {
-                event.consume(); // Avbryt stängning
-            }
-        });
-
-        HBox hbox = new HBox(10);
-        hbox.getChildren().addAll(findPath, showConnection, newPlace, newConnection, changeConnection);
-        hbox.setAlignment(Pos.CENTER);
-
-
-        Region spacer1 = new Region();
-        spacer1.setMinHeight(10);
-        Region spacer2 = new Region();
-        spacer2.setMinHeight(10);
-
-        VBox holdTop = new VBox(menuBar, spacer1, hbox, spacer2);
-
-        root.setTop(holdTop);
-        root.setCenter(pane);
-
-        // Skapa scen och visa fönstret
-        Scene scene = new Scene(root, 640, 480);
-        primaryStage.setScene(scene);
-        primaryStage.setTitle("PathFinder");
-        primaryStage.show();
-        extraHeight = (primaryStage.getHeight() - primaryStage.getScene().getHeight()) + holdTop.getHeight();
-
+        }
     }
 
-    // Aktiverar en knapp, återställer muspekaren
+
+    private class ExitListener implements EventHandler<ActionEvent> {
+        @Override
+        public void handle(ActionEvent event) {
+            if (!confirmDiscardChanges()) return;
+            ((Stage) pane.getScene().getWindow()).close();
+        }
+    }
+
+    // ------ Hjälpmetoder ------
+
+
     private void enableButton(Button buttonName) {
         buttonName.setDisable(false);
         overlayPane.setCursor(Cursor.DEFAULT);
         overlayPane.setOnMouseClicked(null); // Rensar eventhanterare
     }
 
-    // Inaktiverar en knapp
+
     private void disableButton(Button buttonName) {
         buttonName.setDisable(true);
     }
 
-    //Ny metod för att disablea alla knappar från start
+
     private void disableAllButtons() {
         disableButton(newPlace);
         disableButton(newConnection);
@@ -587,7 +668,7 @@ public class Gui extends Application {
         disableButton(findPath);
     }
 
-    //Ny metod för att enablea efter map har öppnats , se punkt 4.2
+
     private void enableAllButtons() {
         enableButton(newPlace);
         enableButton(newConnection);
@@ -596,7 +677,7 @@ public class Gui extends Application {
         enableButton(findPath);
     }
 
-    //metod för att kontrollera om två platser är valda
+
     private boolean checkTwoPlacesSelected() {
         if (selectedCircles.size() != 2) {
             showError("Two places must be selected!");
@@ -605,7 +686,7 @@ public class Gui extends Application {
         return true;
     }
 
-    //metod för att hämta de två valda platserna
+
     private Place[] getSelectedPlaces() {
         if (!checkTwoPlacesSelected()) {
             return null;
@@ -634,7 +715,7 @@ public class Gui extends Application {
         return new Place[]{place1, place2};
     }
 
-    //metod för att återställa valda cirklar
+
     private void resetSelectedCircles() {
         for (Circle circle : selectedCircles) {
             circle.setFill(Color.BLUE);
@@ -642,7 +723,7 @@ public class Gui extends Application {
         selectedCircles.clear();
     }
 
-    // Laddar graf från fil
+
     private void loadGraphFromFile(File file) {
         try (Scanner scanner = new Scanner(file)) {
             String imagePath = scanner.nextLine();
@@ -689,7 +770,6 @@ public class Gui extends Application {
         }
     }
 
-    // Bekräftar om osparade ändringar ska kastas
     private boolean confirmDiscardChanges() {
         if (!hasUnsavedChanges) return true;
 
@@ -703,8 +783,6 @@ public class Gui extends Application {
         return alert.showAndWait().orElse(cancelButton) == okButton;
     }
 
-
-    // Visar felmeddelande i dialogruta
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         enableAllButtons();
@@ -716,7 +794,6 @@ public class Gui extends Application {
         enableAllButtons();
     }
 
-    // Ritar en plats dvs cirkel på kartan med tooltip och klickfunktion
     private void drawPlace(Place place) {
         Circle circle = new Circle(place.getX(), place.getY(), 8);
         circle.setFill(Color.BLUE);
@@ -725,7 +802,23 @@ public class Gui extends Application {
         Tooltip tooltip = new Tooltip(place.getName());
         Tooltip.install(circle, tooltip);
 
-        circle.setOnMouseClicked(event -> {
+        circle.setOnMouseClicked(new PlaceClickListener(circle));
+
+        overlayPane.getChildren().add(circle); // Lägg till cirkeln i vyn
+    }
+
+
+    // Inre klass för att hantera klick på platser
+
+    private class PlaceClickListener implements EventHandler<javafx.scene.input.MouseEvent> {
+        private Circle circle;
+
+        public PlaceClickListener(Circle circle) {
+            this.circle = circle;
+        }
+
+        @Override
+        public void handle(javafx.scene.input.MouseEvent event) {
             if (circle.getFill().equals(Color.BLUE)) {
                 // Om färgen är blå och max 2 ej redan valda
                 if (selectedCircles.size() < 2) {
@@ -741,12 +834,10 @@ public class Gui extends Application {
                 circle.setFill(Color.BLUE);
                 selectedCircles.remove(circle);
             }
-        });
-
-        overlayPane.getChildren().add(circle); // Lägg till cirkeln i vyn
+        }
     }
 
-    // Ritar linjen mellan två platser
+
     private void drawConnection(Place from, Place to) {
         Line line = new Line(from.getX(), from.getY(), to.getX(), to.getY());
         line.setStroke(Color.BLACK);
@@ -754,6 +845,7 @@ public class Gui extends Application {
         // Lägg till linjen i overlayPane istället för pane, och på index 0 så den hamnar bakom cirklarna
         overlayPane.getChildren().add(0, line);
     }
+
 
     private void addPlacesFromFile(String stringOfPlaces) {
         List<Place> placesToAdd = new ArrayList<>();
@@ -770,8 +862,8 @@ public class Gui extends Application {
             placeMap.put(p.getName(), p);
             drawPlace(p);
         }
-
     }
+
 
     private String createSaveStringOfGraphs() {
         StringBuilder sb = new StringBuilder();
@@ -787,8 +879,7 @@ public class Gui extends Application {
         return sb.toString();
     }
 
-
-     private List<String> getConnectionsAsStrings() {
+    private List<String> getConnectionsAsStrings() {
         List<String> connections = new ArrayList<>();
         for(String nodeName : graph.getNodes()){
             Collection<Edge<String>> edges = graph.getEdgesFrom(nodeName);
@@ -801,8 +892,8 @@ public class Gui extends Application {
             }
         }
         return connections;
-     }
-    // Gemensam metod för att visa karta i fönstret och justera storlek
+    }
+
     private void stageToImageSize(Image image, Stage stage) {
         imageView.setImage(image);
         imageView.setPreserveRatio(true);
@@ -816,8 +907,8 @@ public class Gui extends Application {
         stage.setHeight(image.getHeight() + extraHeight);
     }
 
-
     public static void main(String[] args) {
         launch(args);
     }
 }
+
