@@ -31,7 +31,7 @@ public class ListGraph<T> implements Graph<T> {
     @Override
     public void connect(T node1, T node2, String name, int weight) { //node = place, edge = connection, nodeedge = en plats alla connections
         checkIfNodesExists(node1, node2);
-
+        checkIfWeightIsValid(weight); //kan vara något överflödig, fungerar även utan men men
         checkIfNoExistingEdge(node1, node2); //om noderna inte finns, undantag
 
         //Lägger till noder i båda riktningar med samma namn och vikt :D
