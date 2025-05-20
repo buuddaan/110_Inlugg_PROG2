@@ -3,7 +3,7 @@
 // Elvira Fröjd eljo2851
 // Mathilda Wallen mawa6612
 // Matilda Fahle mafa2209
-// Sista innan inlämning!!
+
 
 package se.su.inlupp;
 
@@ -141,6 +141,7 @@ public class Gui extends Application {
 
 
     }
+
     // fixa knapparna o deras funktionalitet i en metod)
     private void setupButtons() {
         findPath = new Button("Find Path");
@@ -547,7 +548,7 @@ public class Gui extends Application {
                 overlayPane.getChildren().clear();
                 selectedCircles.clear();
             } else {
-                return; // Avbryter om användaren inte vill förkasta ändringar
+                return; // Avbryter om användaren inte vill kasta ändringar
             }
 
             FileChooser fileChooser = new FileChooser();
@@ -599,13 +600,13 @@ public class Gui extends Application {
             File selectedFile = fileChooser.showSaveDialog(pane.getScene().getWindow());
             if (selectedFile != null) {
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(selectedFile))) {
-                    bw.write("file:"+ imageFilePath); // Spara bildfilen
+                    bw.write("file:" + imageFilePath); // Spara bildfilen
                     bw.newLine();
                     bw.write(createSaveStringOfGraphs()); // Spara platsinformation
                     bw.newLine();
 
                     List<String> connections = getConnectionsAsStrings();
-                    for(String connection : connections) {
+                    for (String connection : connections) {
                         bw.write(connection);
                         bw.newLine();
                     }
@@ -640,7 +641,6 @@ public class Gui extends Application {
             ((Stage) pane.getScene().getWindow()).close();
         }
     }
-
 
 
     // Våra hjälpmetoder
@@ -717,7 +717,7 @@ public class Gui extends Application {
     private void loadGraphFromFile(File file) {
         try (Scanner scanner = new Scanner(file)) {
             String imagePath = scanner.nextLine();
-            String imageFilePath = imagePath.substring(imagePath.indexOf(":")+1);
+            String imageFilePath = imagePath.substring(imagePath.indexOf(":") + 1);
             Image image = new Image(new File(imageFilePath).toURI().toString());
             imageView.setImage(image);
             imageView.setPreserveRatio(true);
@@ -731,22 +731,22 @@ public class Gui extends Application {
 
             addPlacesFromFile(graphString);
 
-            while (scanner.hasNextLine()){
+            while (scanner.hasNextLine()) {
                 String connectionString = scanner.nextLine();
-                String [] parts = connectionString.split(";");
-                if(parts.length == 4){
+                String[] parts = connectionString.split(";");
+                if (parts.length == 4) {
                     String from = parts[0];
                     String to = parts[1];
                     String name = parts[2];
                     int weight = Integer.parseInt(parts[3]);
 
-                    if (graph.getEdgeBetween(from,to) == null){
-                        graph.connect(from,to,name,weight);
+                    if (graph.getEdgeBetween(from, to) == null) {
+                        graph.connect(from, to, name, weight);
 
                         Place fromPlace = placeMap.get(from);
                         Place toPlace = placeMap.get(to);
                         if (fromPlace != null && toPlace != null) {
-                            drawConnection(fromPlace,toPlace);
+                            drawConnection(fromPlace, toPlace);
                         }
                     }
                 }
@@ -869,13 +869,13 @@ public class Gui extends Application {
 
     private List<String> getConnectionsAsStrings() {
         List<String> connections = new ArrayList<>();
-        for(String nodeName : graph.getNodes()){
+        for (String nodeName : graph.getNodes()) {
             Collection<Edge<String>> edges = graph.getEdgesFrom(nodeName);
 
-            for(Edge<String> edge : edges) {
+            for (Edge<String> edge : edges) {
                 String destinationNode = edge.getDestination();
                 String connectionsString = nodeName + ";" + destinationNode + ";" +
-                        edge.getName() + ";" + edge.getWeight() ;
+                        edge.getName() + ";" + edge.getWeight();
                 connections.add(connectionsString);
             }
         }

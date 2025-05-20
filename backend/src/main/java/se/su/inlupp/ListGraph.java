@@ -3,7 +3,7 @@
 // Elvira Fröjd eljo2851
 // Mathilda Wallen mawa6612
 // Matilda Fahle mafa2209
-// Sista innan inlämning!!
+
 
 package se.su.inlupp;
 
@@ -131,7 +131,9 @@ public class ListGraph<T> implements Graph<T> {
 
     @Override
     public boolean pathExists(T from, T to) {
-        if (!nodes.containsKey(from) || !nodes.containsKey(to)) {return false;}
+        if (!nodes.containsKey(from) || !nodes.containsKey(to)) {
+            return false;
+        }
         Set<T> visited = new HashSet<>();
         return depthFirstSearch(from, to, visited);
     }

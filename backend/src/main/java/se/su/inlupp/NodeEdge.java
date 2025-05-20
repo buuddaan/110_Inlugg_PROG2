@@ -16,6 +16,7 @@ public class NodeEdge<T> implements Edge<T> {
         this.name = name;
         setWeight(weight);
     }
+
     @Override
     public T getDestination() {
         return destination;
@@ -40,7 +41,7 @@ public class NodeEdge<T> implements Edge<T> {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return "till " + destination + " med " + name + " tar " + weight;
-        }
+    }
 }
