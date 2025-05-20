@@ -18,12 +18,9 @@ import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Set;
 
-
-
-
 public class ListGraph<T> implements Graph<T> {
 
-    private Map<T, Set<Edge<T>>> nodes = new HashMap<>(); // T = typparameter, ex String. Nyckel T är nod i grafen
+    private Map<T, Set<Edge<T>>> nodes = new HashMap<>(); // T = typparameter, ex String. Nyckel T är nod i grafen. En map som lagrar varje nod och kanter, edge.
 
 
     @Override
@@ -35,13 +32,11 @@ public class ListGraph<T> implements Graph<T> {
     public void connect(T node1, T node2, String name, int weight) { //node = place, edge = connection, nodeedge = en plats alla connections
         checkIfNodesExists(node1, node2);
 
-        
-        checkIfNoExistingEdge(node1, node2);
-        //Använd denna för att skapa
+        checkIfNoExistingEdge(node1, node2); //om noderna inte finns, undantag
 
+        //Lägger till noder i båda riktningar med samma namn och vikt :D
         nodes.get(node1).add(new NodeEdge<>(node2, name, weight));
         nodes.get(node2).add(new NodeEdge<>(node1, name, weight));
-        //Lägger till noder i båda riktningar med samma namn och vikt :D
     }
 
     @Override
@@ -52,12 +47,14 @@ public class ListGraph<T> implements Graph<T> {
         if (getEdgeBetween(node1, node2) == null) {
             throw new NoSuchElementException();
         }
+        // itererar alla node1:s kanter och kollar om destination är node2. Om kanten finns, uppdatera vikten.
         for (Edge<T> edge : nodes.get(node1)) {
             if (edge.getDestination().equals(node2)) {
                 edge.setWeight(weight);
-                break; //Hindrar onödiga iterationer om vi redan hittar rätt direkt
+                break; // break för att for-each för att stoppa när vi hittat rätt.
             }
         }
+        // samma fast andra hållet pga hela grafen är oriktad
         for (Edge<T> edge : nodes.get(node2)) {
             if (edge.getDestination().equals(node1)) {
                 edge.setWeight(weight);
@@ -66,27 +63,29 @@ public class ListGraph<T> implements Graph<T> {
         }
     }
 
+    // kopia av noderna
     @Override
     public Set<T> getNodes() {
-        return new HashSet<>(nodes.keySet()); // kopia av noderna
+        return new HashSet<>(nodes.keySet()); //keySet() = hämtar ett set av nycklarna i en map
     }
 
     @Override
     public Collection<Edge<T>> getEdgesFrom(T node) {
         checkIfNodesExists(node);
-        return new HashSet<>(nodes.get(node));
+        return new HashSet<>(nodes.get(node)); // Kopia av kanterna från noderna
     }
 
     @Override
     public Edge<T> getEdgeBetween(T node1, T node2) {
         checkIfNodesExists(node1, node2);
 
+        // kollar om det finns en kant mellan node1 och node2
         for (Edge<T> edge : nodes.get(node1)) {
             if (edge.getDestination().equals(node2)) {
                 return edge;
             }
         }
-        return null;
+        return null; //om ingen kant returnera null
     }
 
     @Override
@@ -213,7 +212,6 @@ public class ListGraph<T> implements Graph<T> {
     }
 
 
-
     // Privata hjälpmetoder för undantag
     private void checkIfNodesExists(T node1, T node2) {
         if (!nodes.containsKey(node1) || !nodes.containsKey(node2)) {
@@ -239,7 +237,6 @@ public class ListGraph<T> implements Graph<T> {
         }
     }
 
-    //detta är Beatrice toString
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("Nodes");

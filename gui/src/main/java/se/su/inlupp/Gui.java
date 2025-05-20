@@ -86,7 +86,6 @@ public class Gui extends Application {
         initializeUI();
         setupMenuBar();
         setupButtons();
-        setupLayout(primaryStage);
 
         // Skapa scen och visa fönstret
         Scene scene = new Scene(createRootPane(), 640, 480);
@@ -113,7 +112,6 @@ public class Gui extends Application {
         });
 
         pane.setStyle("-fx-background-color: lightgray;");
-        //overlayPane.setStyle("-fx-background-color: transparent;"); //Tillbaka till transparent
         overlayPane.setStyle("-fx-background-color: transparent;");
         overlayPane.setPickOnBounds(false);
     }
@@ -181,12 +179,6 @@ public class Gui extends Application {
         return root;
     }
 
-    //layouten för primary stage
-    private void setupLayout(Stage primaryStage) {
-        // Konfigurerar scenen baserat på tillgänglig information
-        // Storleken justeras senare när en bild laddas
-    }
-
     //findPath knapp
     private class FindPathListener implements EventHandler<ActionEvent> {
         @Override
@@ -221,7 +213,6 @@ public class Gui extends Application {
             ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
             dialogPane.getButtonTypes().add(okButton);
 
-            // visa pathcontentan
             VBox content = new VBox(5);
             content.setPadding(new Insets(10));
 
@@ -268,14 +259,14 @@ public class Gui extends Application {
 
             Place[] places = getSelectedPlaces();
             if (places == null) {
-                enableButton(showConnection); // Återaktivera
+                enableButton(showConnection); // Återaktivera knappar
                 return;
             }
 
             String node1 = places[0].getName();
             String node2 = places[1].getName();
 
-            // Kontrollera om connection finns mellan valda platser
+            // Kontrollera om connection finns mellan valda platser, edge.
             Edge<String> edge = graph.getEdgeBetween(node1, node2);
             if (edge == null) {
                 showError("There is no connection between the selected places.");
@@ -287,7 +278,7 @@ public class Gui extends Application {
             dialog.setTitle("Connection");
             dialog.setHeaderText("Connection from " + node1 + " to " + node2);
 
-            // skapa dialogcontentan
+            // skapa innehåll i dialogruta
             javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
             ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
             dialogPane.getButtonTypes().add(okButton);
@@ -295,7 +286,7 @@ public class Gui extends Application {
             GridPane grid = new GridPane();
             grid.setHgap(10.0);
             grid.setVgap(10.0);
-            grid.setPadding(new Insets(20, 150, 10, 10));
+            grid.setPadding(new Insets(20, 150, 10, 10)); //padding vis sidor, framförallt för vi inte fick ovan och nedan.
 
             // skapa icke-edtibara tetfält
             TextField nameField = new TextField(edge.getName());
@@ -329,6 +320,11 @@ public class Gui extends Application {
             overlayPane.setCursor(Cursor.CROSSHAIR);
             // Inaktivera knappen
             disableButton(newPlace);
+            if (!selectedCircles.isEmpty()) {
+                resetSelectedCircles();
+                // om man markerar två platser och sen klickar newPlace få vi en bugg man sen klickar på new Connection, newPlace knappen går ej att klicka på.
+                // alternativ ha ett felmeddelande istället.
+            }
 
             // Ställ in händelsehanterare för musklick
             overlayPane.setOnMouseClicked(e -> {
@@ -359,7 +355,7 @@ public class Gui extends Application {
         }
     }
 
-
+    // NewConnection
     private class NewConnectionListener implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
@@ -441,7 +437,6 @@ public class Gui extends Application {
                     // rita connection på kartan
                     drawConnection(place1, place2);
 
-                    // Set unsaved changes flag
                     hasUnsavedChanges = true;
 
                     // Återställ valda cirklar
@@ -460,7 +455,7 @@ public class Gui extends Application {
         }
     }
 
-
+    // ChangeConnection
     private class ChangeConnectionListener implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
@@ -483,12 +478,12 @@ public class Gui extends Application {
                 return;
             }
 
-            // Create a dialog to edit connection time
+            //skapa dialogfönster och ändra tid mellan connections
             javafx.scene.control.Dialog<ButtonType> dialog = new javafx.scene.control.Dialog<>();
             dialog.setTitle("Connection");
             dialog.setHeaderText("Connection from " + node1 + " to " + node2);
 
-            // Create the dialog content layout
+            // layout
             javafx.scene.control.DialogPane dialogPane = dialog.getDialogPane();
             ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
             ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
@@ -499,10 +494,10 @@ public class Gui extends Application {
             grid.setVgap(10.0);
             grid.setPadding(new Insets(20, 150, 10, 10));
 
-            // Create fields: name (non-editable), time (editable)
+            // färdmedel som inte går att ändra namnet på och tid som går att ändra
             TextField nameField = new TextField(edge.getName());
             nameField.setEditable(false);
-            TextField timeField = new TextField(); // Empty initially, as shown in the assignment
+            TextField timeField = new TextField();
 
             grid.add(new Label("Name:"), 0, 0);
             grid.add(nameField, 1, 0);
@@ -524,7 +519,7 @@ public class Gui extends Application {
                             return;
                         }
 
-                        // Update the connection weight in the graph
+                        //uppdatera connection med vikten
                         graph.setConnectionWeight(node1, node2, newTime);
                         hasUnsavedChanges = true;
                     } catch (NumberFormatException e) {
@@ -541,11 +536,11 @@ public class Gui extends Application {
         }
     }
 
-
+    // NewMap
     private class NewMapListener implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
-            if (confirmDiscardChanges()) { //Frågetecken gällande dessa. Senaste ändringen bara. Bör kontrolleras
+            if (confirmDiscardChanges()) {
                 graph = new ListGraph<>();
                 placeMap.clear();
                 overlayPane.getChildren().clear();
@@ -571,6 +566,7 @@ public class Gui extends Application {
     }
 
 
+    //OpenMap
     private class OpenMapListener implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
@@ -590,7 +586,7 @@ public class Gui extends Application {
         }
     }
 
-
+    //SaveMap
     private class SaveMapListener implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
@@ -621,13 +617,13 @@ public class Gui extends Application {
         }
     }
 
-
+    //SaveImage
     private class SaveImageListener implements EventHandler<ActionEvent> {
         @Override
         public void handle(ActionEvent event) {
             WritableImage image = pane.snapshot(new SnapshotParameters(), null);
             // Korrigerat enligt uppgiftsbeskrivningen 4.1.4 - spara på toppnivå i projektmappen
-            File outputFile = new File("../capture.png");
+            File outputFile = new File("../capture.png"); //filen hamnar i prog2-inlupp-template/. Utan ../ hade den hamnat i GUI
             try {
                 ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", outputFile);
             } catch (Exception ex) {
@@ -635,7 +631,6 @@ public class Gui extends Application {
             }
         }
     }
-
 
     private class ExitListener implements EventHandler<ActionEvent> {
         @Override
@@ -645,8 +640,9 @@ public class Gui extends Application {
         }
     }
 
-    // ------ Hjälpmetoder ------
 
+
+    // Våra hjälpmetoder
 
     private void enableButton(Button buttonName) {
         buttonName.setDisable(false);
@@ -654,11 +650,9 @@ public class Gui extends Application {
         overlayPane.setOnMouseClicked(null); // Rensar eventhanterare
     }
 
-
     private void disableButton(Button buttonName) {
         buttonName.setDisable(true);
     }
-
 
     private void disableAllButtons() {
         disableButton(newPlace);
@@ -668,7 +662,6 @@ public class Gui extends Application {
         disableButton(findPath);
     }
 
-
     private void enableAllButtons() {
         enableButton(newPlace);
         enableButton(newConnection);
@@ -677,7 +670,6 @@ public class Gui extends Application {
         enableButton(findPath);
     }
 
-
     private boolean checkTwoPlacesSelected() {
         if (selectedCircles.size() != 2) {
             showError("Two places must be selected!");
@@ -685,7 +677,6 @@ public class Gui extends Application {
         }
         return true;
     }
-
 
     private Place[] getSelectedPlaces() {
         if (!checkTwoPlacesSelected()) {
@@ -715,14 +706,12 @@ public class Gui extends Application {
         return new Place[]{place1, place2};
     }
 
-
     private void resetSelectedCircles() {
         for (Circle circle : selectedCircles) {
             circle.setFill(Color.BLUE);
         }
         selectedCircles.clear();
     }
-
 
     private void loadGraphFromFile(File file) {
         try (Scanner scanner = new Scanner(file)) {
@@ -820,6 +809,7 @@ public class Gui extends Application {
         @Override
         public void handle(javafx.scene.input.MouseEvent event) {
             if (circle.getFill().equals(Color.BLUE)) {
+
                 // Om färgen är blå och max 2 ej redan valda
                 if (selectedCircles.size() < 2) {
                     circle.setFill(Color.RED);
@@ -830,13 +820,12 @@ public class Gui extends Application {
                     //Försvar: Snyggare med tydlighet för användaren. Tekniskt sett händer inget annat än felmeddelande, kreativ frihet osv :D
                 }
             } else {
-                // Avmarkera
+                // Avmarkera cirkel
                 circle.setFill(Color.BLUE);
                 selectedCircles.remove(circle);
             }
         }
     }
-
 
     private void drawConnection(Place from, Place to) {
         Line line = new Line(from.getX(), from.getY(), to.getX(), to.getY());
@@ -845,7 +834,6 @@ public class Gui extends Application {
         // Lägg till linjen i overlayPane istället för pane, och på index 0 så den hamnar bakom cirklarna
         overlayPane.getChildren().add(0, line);
     }
-
 
     private void addPlacesFromFile(String stringOfPlaces) {
         List<Place> placesToAdd = new ArrayList<>();
@@ -864,15 +852,14 @@ public class Gui extends Application {
         }
     }
 
-
     private String createSaveStringOfGraphs() {
         StringBuilder sb = new StringBuilder();
 
         for (Map.Entry<String, Place> entry : placeMap.entrySet()) {
             sb.append(entry.getValue().toString());
-            sb.append(";"); // append semicolon after each place
+            sb.append(";"); // lägg till ett ; efter varje
         }
-        // Remove the last extra semicolon
+        // ta bort sista ;
         if (sb.length() > 0) {
             sb.setLength(sb.length() - 1);
         }
